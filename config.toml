@@ -1,0 +1,10 @@
+[customizations.installer.kickstart]
+contents = """
+graphical
+
+timezone Asia/Seoul
+
+%post --erroronfail
+bootc switch --mutate-in-place --transport registry quay.io/yuntae/immutable-os-bootc:latest
+%end
+"""
