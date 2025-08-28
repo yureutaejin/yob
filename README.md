@@ -27,10 +27,10 @@ sudo podman run \
 
 - OCI Registry for OS based on bootc
   - quay.io/yuntae/immutable-os-bootc
+- Memo for packages
+  - container-management : (podman, buildah, skopeo)
 
 ## Appendix
 
-- `/var/{roothome,home}` in fedora bootc image
-  - https://docs.fedoraproject.org/en-US/bootc/home-directories
 - `podman login -u='{username}' -p='{credential}' {registry type}` saved credentials in `/run/user/{UID}/containers/auth.json`
   - https://stackoverflow.com/questions/77412593/how-are-docker-credentials-saved-in-podman
