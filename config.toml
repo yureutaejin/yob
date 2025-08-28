@@ -5,12 +5,5 @@ timezone Asia/Seoul
 autopart --type=plain
 reboot
 
-group --name=ytjin --gid=1000
-user --name=ytjin --uid=1000 --groups=wheel,ytjin --password pleasechangeit --plaintext
-
-%post --erroronfail
-echo 'ytjin ALL=(ALL) NOPASSWD:ALL' >/etc/sudoers.d/90-ytjin
-chmod 440 /etc/sudoers.d/90-ytjin
-%end
-
+user --name=ytjin --uid=1000 --groups=wheel --password pleasechangeit --plaintext
 """
