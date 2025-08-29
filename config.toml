@@ -5,5 +5,9 @@ timezone Asia/Seoul
 autopart --type=plain
 reboot
 
-user --name=ytjin --uid=1000 --groups=wheel --password pleasechangeit --plaintext
+user --name=ytjin --uid=1000 --groups=wheel --password ${{ secret.default_user_password }} --plaintext
+
+%post --erroronfail
+systemctl enable docker
+%end
 """
