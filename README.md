@@ -4,10 +4,21 @@ Repository for template/test of immutable-os
 
 ## Convert OCI container image to Bootable OS image
 
+> [!NOTE]
+> Currently, bootc-image-builder is not stable yet.
+>
+> (It highly depends on podman runtime which is popular for rootless, even though it uses `privileged` and `sudo` to convert OCI to bootable images)
+
 Please refer to https://github.com/osbuild/bootc-image-builder
 
 ```bash
 mkdir -p ./output
+
+# bootc-image-builder does not pull target image
+sudo podman pull {source_image:tag}
+
+# It sacrifices the benefit of rootless Container Runtime
+# if you add package repository yourself(not based on $pkgsystem), `iso` option makes problems sometimes
 sudo podman run \
     --rm -it \
     --privileged \
@@ -17,9 +28,9 @@ sudo podman run \
     -v ./config.toml:/config.toml:ro \
     -v /var/lib/containers/storage:/var/lib/containers/storage \
     quay.io/centos-bootc/bootc-image-builder:latest \
-    --type qcow2 \
+    --type {iso,qcow2} \
     --use-librepo=True \
-    --rootfs btrfs \    # for OS like fedora distros which does not have root filesystem
+    --rootfs {ext4,btrfs,xfs} \
     {target_image:tag}
 ```
 
