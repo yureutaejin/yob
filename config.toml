@@ -2,7 +2,11 @@
 contents = """
 graphical
 timezone Asia/Seoul
+
+ignoredisk --only-use={{ inputs.default_disk }}
+clearpart --all --initlabel --drives={{ inputs.default_disk }}
 autopart --type=plain
+
 reboot
 
 user --name=ytjin --uid=1000 --groups=wheel --password ${{ secret.default_user_password }} --plaintext
