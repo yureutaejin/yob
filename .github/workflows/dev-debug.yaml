@@ -5,16 +5,105 @@ on:
   workflow_dispatch:
     inputs:
       runner-group:
-        description: 'Select the runner group'
+        description: 'Type the runner group'
         required: true
         default: 'Default'
         type: string
+      runner-label:
+        description: 'Type label of runner'
+        required: true
+        default: 'x64'
+        type: string
+      oci_registry:
+        description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
+        required: true
+        default: 'quay.io'
+        type: string
+      oci_image_repo_path:
+        description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
+        required: true
+        default: 'user/my-repo'
+        type: string
+      oci_image_tag:
+        description: 'Type the image tag you want to use'
+        required: true
+        default: 'latest'
+        type: string
+
+      disk_format:
+        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`)'
+        required: true
+        default: 'iso'
+        type: string
+      
 
 jobs:
-  test:
+  build-oci-image:
+    outputs:
+      full-oci-tag: ${{ steps.define_full_oci_tag.outputs.full-oci-tag }}
     runs-on:
       group: ${{ inputs.runner-group }}
+      labels:
+        - ${{ inputs.runner-label }}
+
     steps:
-      - name: template
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Login to OCI Registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ inputs.oci_registry }}
+          username: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
+          password: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
+
+      - name: Define full path of repository
+        id: define_full_oci_tag
         run: |
-          echo "this is template"
+          echo "full-oci-tag=${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}" | tee -a $GITHUB_OUTPUT
+
+      - name: Build OCI image
+        run: |
+          podman build -t ${{ steps.define_full_oci_tag.outputs.full-oci-tag }} .
+
+      - name: Push OCI image to registry
+        run: |
+          podman push ${{ steps.define_full_oci_tag.outputs.full-oci-tag }}    
+
+  build-os-image:
+    needs: build-oci-image
+    runs-on:
+      group: ${{ inputs.runner-group }}
+      labels:
+        - ${{ inputs.runner-label }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Login to OCI Registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ inputs.oci_registry }}
+          username: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
+          password: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
+
+      - name: Pull OCI image
+        run: |
+          sudo podman pull ${{ needs.build-oci-image.outputs.full-oci-tag }}
+
+      - name: Convert OCI image into specified disk format
+        run: |
+          sudo podman run --rm \
+            --privileged \
+            --security-opt label=type:unconfined_t \
+            -v ./image-builder-output:/output \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532 \
+            --type ${{ inputs.disk_format }} \
+            --use-librepo=True \
+            --rootfs btrfs \
+            ${{ needs.build-oci-image.outputs.full-oci-tag }}
+
+      - name: Save disk format image
+        run: |
+          sudo mv ./image-builder-output /opt/
