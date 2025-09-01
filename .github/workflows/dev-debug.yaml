@@ -1,0 +1,20 @@
+name: "Workflow for Development & Debugging"
+run-name: "Dev & Debug Workflow - ${{ github.ref }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner-group:
+        description: 'Select the runner group'
+        required: true
+        default: 'Default'
+        type: string
+
+jobs:
+  test:
+    runs-on:
+      group: ${{ inputs.runner-group }}
+    steps:
+      - name: template
+        run: |
+          echo "this is template"
