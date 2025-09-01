@@ -29,7 +29,11 @@ on:
         required: true
         default: 'latest'
         type: string
-
+      default_disk:
+        description: 'Type disk name you want to use as rootfs (e.g `sda`, `nvme0n1`)'
+        required: true
+        default: 'sda'
+        type: string
       disk_format:
         description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`)'
         required: true
@@ -86,6 +90,12 @@ jobs:
         run: |
           sudo podman pull ${{ needs.build-oci-image.outputs.full-oci-tag }}
 
+      - name: Configure kickstart
+        run: |
+          sed -i "s|{{ inputs.default_disk }}|${{ inputs.default_disk }}|g" config.toml
+          sed -i "s|{{ secret.DEFAULT_USER_NAME }}|${{ secrets.DEFAULT_USER_NAME }}|g" config.toml
+          sed -i "s|{{ secret.DEFAULT_USER_PASSWD }}|${{ secrets.DEFAULT_USER_PASSWD }}|g" config.toml
+
       - name: Convert OCI image into specified disk format
         run: |
           sudo podman run --rm \
@@ -101,4 +111,5 @@ jobs:
 
       - name: Save disk format image
         run: |
-          sudo mv ./image-builder-output /opt/
+          sudo cp -rf ./image-builder-output /opt/
+          sudo rm -rf ./image-builder-output

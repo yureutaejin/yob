@@ -7,7 +7,7 @@ ignoredisk --only-use={{ inputs.default_disk }}
 clearpart --all --initlabel --drives={{ inputs.default_disk }}
 autopart --type=plain
 
-user --name=ytjin --uid=1000 --groups=wheel --password ${{ secret.default_user_password }} --plaintext
+user --name={{ secret.DEFAULT_USER_NAME }} --uid=1000 --groups=wheel --password {{ secret.DEFAULT_USER_PASSWD }} --plaintext
 gsettings set org.gnome.desktop.background picture-uri 'file:///usr/share/backgrounds/custom/custom-wallpaper.jpg'
 
 reboot
