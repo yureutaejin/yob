@@ -5,6 +5,7 @@ FROM ${BASE}
 ## See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
 
+COPY ./filesystem/usr/* /usr/
 COPY ./filesystem/etc/* /etc/
 ADD https://pkgs.tailscale.com/stable/fedora/tailscale.repo /etc/yum.repos.d/tailscale.repo
 ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
