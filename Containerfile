@@ -13,15 +13,9 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
         && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
         > /etc/yum.repos.d/vscode.repo
 
-# Install packages from source
+# Install packages from source OCI image
 COPY --from=docker.io/mikefarah/yq:4 /usr/bin/yq /usr/bin/yq
 COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
-RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
-        tar xz starship -C /usr/bin/
-RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws
 
 RUN dnf upgrade -y
 
@@ -50,12 +44,21 @@ RUN dnf install -y \
     tailscale \
     net-tools \
     vim \
+    unzip \
     wireshark \
     bash-completion \
     code \
     fedora-release-ostree-desktop \
     && dnf clean all && \
     rm -rf /var/cache/libdnf5
+
+# Install packages from source
+RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
+        tar xz starship -C /usr/bin/
+RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
 
 # Activate GUI as default
 RUN systemctl set-default graphical.target
