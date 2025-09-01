@@ -27,7 +27,7 @@ RUN dnf upgrade -y
 
 # Add RPM Fusion repositories
 ## Refer to https://rpmfusion.org/
-RUN dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs \
+RUN dnf install -y \
 	https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
 	https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
@@ -41,7 +41,7 @@ RUN dnf group install -y \
 	guest-desktop-agents
 
 # dnf package installation
-RUN dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs \
+RUN dnf install -y \
     docker-ce \
     docker-ce-cli \
     containerd.io \
@@ -55,7 +55,7 @@ RUN dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs \
     code \
     fedora-release-ostree-desktop \
     && dnf clean all && \
-    rm -rf /var/cache/dnf
+    rm -rf /var/cache/libdnf5
 
 # Activate GUI as default
 RUN systemctl set-default graphical.target
