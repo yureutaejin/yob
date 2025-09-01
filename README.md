@@ -1,8 +1,43 @@
-# immutable-os
+# Immutable OS - bootc
 
-Repository for template/test of immutable-os
+(Experimental) Repository for building immutable OS using [bootc](https://bootc-dev.github.io/)
 
-## Convert OCI container image to Bootable OS image
+## 1. Build OCI image with bootable container
+
+![Bootable Container](https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs)
+
+As everybody knows, The Linux container usually shares kernel with host OS,  
+so that we can easily create a "Container" which is more lightweight and faster than Virtual Machine.
+
+The bootc project uses the method in reverse to create OS using the Linux container techniques.  
+Unlike usual OCI containers, the base OCI container (so called, bootable container) that bootc uses have below things already.
+
+- Linux kernel
+- Bootloader
+- systemd
+- System utilities & drivers
+
+So we can create OS image using OCI container techniques which is familiar to modern developers/engineers.
+
+### How to build it
+
+> [!NOTE]
+> Containerfile is the format of Podman. But it is okay to build it with Docker. (OCI format)
+
+1. Clone this repository
+2. Edit [Containerfile](./Containerfile) as needed
+   - Currently, OCI container from RHEL OS (especially, Atomic OS) provides bootable container.
+     - Official RHEL Family : fedora-{bootc,Silverblue,CoreOS}, Almalinux-bootc, CentOS-bootc, RHEL for edge, RHEL CoreOS
+     - Custom : Project Universal Blue, HeliumOS
+   - `/usr` will be read-only. Put read-only data and executables in `/usr`
+   - Put configuration files in `/usr` or `/etc`
+   - Put "data" (log, databases, etc.) underneath `/var`
+3. Build the OCI container image
+   - `{docker,podman,etc} build -t {image_name}:{tag} .`
+4. Use it like usual OCI containers.
+   - ***e.g.*** `{docker,podman,etc} run -it {image_name}:{tag} /bin/bash`
+
+## 2. Convert OCI image to bootable disk
 
 > [!NOTE]
 > Currently, bootc-image-builder is not stable yet.
