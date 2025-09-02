@@ -2,9 +2,13 @@ ARG BASE=quay.io/fedora/fedora-bootc:42
 
 FROM ${BASE}
 
-LABEL containers.bootc 1
+ARG GIT_COMMIT_HASH
 
-## See https://docs.fedoraproject.org/en-US/bootc/home-directories
+LABEL containers.bootc 1
+# See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
+LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
+
+# See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
 
 # Install packages from source OCI image
@@ -56,7 +60,9 @@ RUN dnf install -y \
 
 # Install packages from source
 RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
-    tar xz starship -C /usr/bin/
+    tar xz -C /usr/bin/ starship
+RUN curl -fsSL https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.tar.gz | \
+    tar xz -C /usr/bin/ dive
 RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
     unzip awscliv2.zip && \
     ./aws/install && \

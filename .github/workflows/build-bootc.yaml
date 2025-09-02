@@ -1,5 +1,5 @@
-name: "Workflow for Development & Debugging"
-run-name: "Dev & Debug Workflow - ${{ github.ref }}"
+name: "Build OCI container and Disk Image with bootc"
+run-name: "Build bootc - ${{ github.ref }}"
 
 on:
   workflow_dispatch:
