@@ -68,6 +68,9 @@ RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscl
     ./aws/install && \
     rm -rf awscliv2.zip aws
 
+# Enable specific systemd service
+RUN systemctl enable docker
+
 # sync ./filesystem with root filesystem
 RUN rsync -a /tmp/filesystem/ / && \
     rm -rf /tmp/filesystem

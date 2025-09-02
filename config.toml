@@ -9,9 +9,5 @@ autopart --type=plain
 
 user --name={{ secret.DEFAULT_USER_NAME }} --uid=1000 --groups=wheel --password {{ secret.DEFAULT_USER_PASSWD }} --plaintext
 
-%post --erroronfail
-systemctl enable docker
-%end
-
 reboot
 """
