@@ -2,6 +2,8 @@ ARG BASE=quay.io/fedora/fedora-bootc:41
 
 FROM ${BASE}
 
+LABEL containers.bootc 1
+
 ## See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
 
