@@ -42,7 +42,7 @@ on:
       
 
 jobs:
-  build-oci-image:
+  build-oci-bootc-image:
     outputs:
       full-oci-tag: ${{ steps.define_full_oci_tag.outputs.full-oci-tag }}
     runs-on:
@@ -58,21 +58,19 @@ jobs:
         run: |
           podman login -u=${{ secrets.OCI_REGISTRY_BOT_USERNAME }} -p=${{ secrets.OCI_REGISTRY_BOT_PASSWORD }} ${{ inputs.oci_registry }}
 
-      - name: Define full path of repository
-        id: define_full_oci_tag
-        run: |
-          echo "full-oci-tag=${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}" | tee -a $GITHUB_OUTPUT
-
       - name: Build OCI image
         run: |
-          podman build -t ${{ steps.define_full_oci_tag.outputs.full-oci-tag }} .
+          podman build -t ${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }} .
+          podman container commit $(git rev-parse --short=12 HEAD) ${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
+          podman image tag ${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }} \
+            ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
 
       - name: Push OCI image to registry
         run: |
-          podman push ${{ steps.define_full_oci_tag.outputs.full-oci-tag }}    
+          podman image push ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
 
   build-os-image:
-    needs: build-oci-image
+    needs: build-oci-bootc-image
     runs-on:
       group: ${{ inputs.runner-group }}
       labels:
@@ -88,7 +86,7 @@ jobs:
 
       - name: Pull OCI image
         run: |
-          sudo podman pull ${{ needs.build-oci-image.outputs.full-oci-tag }}
+          sudo podman pull ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
 
       - name: Configure kickstart
         run: |
@@ -107,7 +105,7 @@ jobs:
             --type ${{ inputs.disk_format }} \
             --use-librepo=True \
             --rootfs btrfs \
-            ${{ needs.build-oci-image.outputs.full-oci-tag }}
+            ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
 
       - name: Save disk format image
         run: |
