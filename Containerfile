@@ -1,4 +1,4 @@
-ARG BASE=quay.io/fedora/fedora-bootc:41
+ARG BASE=quay.io/fedora/fedora-bootc:42
 
 FROM ${BASE}
 
