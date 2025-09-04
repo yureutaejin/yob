@@ -76,9 +76,11 @@ RUN rsync -a /tmp/filesystem/ / && \
     rm -rf /tmp/filesystem
 
 # systemd settings
-RUN systemctl enable docker
 RUN systemctl disable NetworkManager
+RUN systemctl disable NetworkManager-wait-online
 RUN systemctl enable systemd-networkd
+RUN systemctl enable netplan-apply.service
+RUN systemctl enable docker
 RUN systemctl set-default graphical.target
 
 RUN dconf update

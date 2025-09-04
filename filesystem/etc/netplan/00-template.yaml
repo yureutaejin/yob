@@ -4,6 +4,8 @@ network:
   ethernets:
     "ethernet_if_name":
       dhcp4: no
+      dhcp6: no
+      accept-ra: no
       addresses:
         - 192.168.0.34/24
       routes:
