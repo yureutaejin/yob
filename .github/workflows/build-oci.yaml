@@ -1,4 +1,4 @@
-name: "Build OCI container and Disk Image with bootc"
+name: "Build OCI container"
 run-name: "Build bootc - ${{ github.ref }}"
 
 on:
@@ -64,51 +64,3 @@ jobs:
       - name: Push OCI image to registry
         run: |
           podman image push ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
-
-  convert-to-disk-image:
-    needs: build-oci-bootc-image
-    runs-on:
-      group: ${{ inputs.runner-group }}
-      labels:
-        - ${{ inputs.runner-label }}
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Login to OCI Registry
-        run: |
-          podman login -u=${{ secrets.OCI_REGISTRY_BOT_USERNAME }} -p=${{ secrets.OCI_REGISTRY_BOT_PASSWORD }} ${{ inputs.oci_registry }}
-
-      - name: Pull OCI image
-        run: |
-          sudo podman pull ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
-
-      - name: Configure kickstart
-        run: |
-          sed -i "s|{{ inputs.default_disk }}|${DEFAULT_DISK}|g" config.toml
-          sed -i "s|{{ secret.DEFAULT_USER_NAME }}|${DEFAULT_USER_NAME}|g" config.toml
-          sed -i "s|{{ secret.DEFAULT_USER_PASSWD }}|${DEFAULT_USER_PASSWD}|g" config.toml
-        env:
-          DEFAULT_DISK: ${{ inputs.default_disk }}
-          DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
-          DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
-
-      - name: Convert OCI image into specified disk format
-        run: |
-          sudo podman run --rm \
-            --privileged \
-            --security-opt label=type:unconfined_t \
-            -v ./image-builder-output:/output \
-            -v ./config.toml:/config.toml:ro \
-            -v /var/lib/containers/storage:/var/lib/containers/storage \
-            quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532 \
-            --type ${{ inputs.disk_format }} \
-            --use-librepo=True \
-            --rootfs btrfs \
-            ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
-
-      - name: Save disk format image
-        run: |
-          sudo cp -rf ./image-builder-output /opt/
-          sudo rm -rf ./image-builder-output
