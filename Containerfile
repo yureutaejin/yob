@@ -48,6 +48,7 @@ RUN dnf install -y \
     docker-compose-plugin \
     tailscale \
     net-tools \
+    systemd-networkd \
     netplan.io \
     jq \
     vim \
@@ -76,6 +77,8 @@ RUN rsync -a /tmp/filesystem/ / && \
 
 # systemd settings
 RUN systemctl enable docker
+RUN systemctl disable NetworkManager
+RUN systemctl enable systemd-networkd
 RUN systemctl set-default graphical.target
 
 RUN dconf update

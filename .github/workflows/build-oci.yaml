@@ -29,16 +29,6 @@ on:
         required: true
         default: 'latest'
         type: string
-      default_disk:
-        description: 'Type disk name you want to use as rootfs (e.g `sda`, `nvme0n1`)'
-        required: true
-        default: 'sda'
-        type: string
-      disk_format:
-        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`)'
-        required: true
-        default: 'iso'
-        type: string
 
 jobs:
   build-oci-bootc-image:
