@@ -48,6 +48,8 @@ RUN dnf install -y \
     docker-compose-plugin \
     tailscale \
     net-tools \
+    netplan.io \
+    jq \
     vim \
     unzip \
     wireshark \
