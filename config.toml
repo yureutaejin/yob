@@ -9,5 +9,9 @@ autopart --type=plain
 
 user --name={{ secret.DEFAULT_USER_NAME }} --uid=1000 --groups=wheel --password {{ secret.DEFAULT_USER_PASSWD }} --plaintext
 
+%post
+echo "$(hostnamectl -j | jq -r .Chassis)-$(hostnamectl -j | jq -r .MachineID | cut -c 1-9)" | tee /etc/hostname > /dev/null
+%end
+
 reboot
 """
