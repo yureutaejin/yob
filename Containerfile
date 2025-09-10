@@ -14,9 +14,9 @@ RUN mkdir -p /var/roothome
 # Install packages from source OCI image
 COPY --from=docker.io/mikefarah/yq:4 /usr/bin/yq /usr/bin/yq
 COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
+
 COPY ./filesystem /tmp/filesystem
 
-ADD https://pkgs.tailscale.com/stable/fedora/tailscale.repo /etc/yum.repos.d/tailscale.repo
 ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
     && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
@@ -47,10 +47,8 @@ RUN dnf install -y \
     docker-buildx-plugin \
     docker-compose-plugin \
     tailscale \
-    net-tools \
     systemd-networkd \
     netplan.io \
-    jq \
     vim \
     unzip \
     wireshark \
@@ -80,6 +78,7 @@ RUN systemctl disable NetworkManager
 RUN systemctl disable NetworkManager-wait-online
 RUN systemctl enable systemd-networkd
 RUN systemctl enable netplan-apply.service
+RUN systemctl enable tailscaled
 RUN systemctl enable docker
 RUN systemctl set-default graphical.target
 
