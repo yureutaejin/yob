@@ -1,10 +1,12 @@
-ARG BASE=quay.io/fedora/fedora-bootc:42
+ARG BASE="quay.io/fedora/fedora-bootc:42"
+ARG GIT_COMMIT_HASH
 
 FROM ${BASE}
 
 ARG GIT_COMMIT_HASH
 
-LABEL containers.bootc 1
+# See https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
+LABEL containers.bootc=1
 # See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
 LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
 
@@ -15,14 +17,20 @@ RUN mkdir -p /var/roothome
 COPY --from=docker.io/mikefarah/yq:4 /usr/bin/yq /usr/bin/yq
 COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
 
-COPY ./filesystem /tmp/filesystem
+# Install packages from source
+RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
+    tar xz -C /usr/bin/ starship
+RUN curl -fsSL https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.tar.gz | \
+    tar xz -C /usr/bin/ dive
+RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
 
 ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
     && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
     | tee /etc/yum.repos.d/vscode.repo > /dev/null
-
-RUN dnf upgrade -y
 
 # Add RPM Fusion repositories
 ## Refer to https://rpmfusion.org/
@@ -30,17 +38,14 @@ RUN dnf install -y \
 	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
 	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
-# dnf package group installation
-## See also https://fedoraproject.org/wiki/Changes/UnprivilegedUpdatesAtomicDesktops
-RUN dnf group install -y \
-	  core \
-	  gnome-desktop \
-	  firefox \
-	  fonts \
-	  guest-desktop-agents
-
 # dnf package installation
+## See also https://fedoraproject.org/wiki/Changes/UnprivilegedUpdatesAtomicDesktops
 RUN dnf install -y \
+    @core \
+    @gnome-desktop \
+    @firefox \
+    @fonts \
+    @guest-desktop-agents \
     docker-ce \
     docker-ce-cli \
     containerd.io \
@@ -59,15 +64,7 @@ RUN dnf install -y \
     && dnf clean all && \
     rm -rf /var/cache/libdnf5
 
-# Install packages from source
-RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
-    tar xz -C /usr/bin/ starship
-RUN curl -fsSL https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.tar.gz | \
-    tar xz -C /usr/bin/ dive
-RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws
+COPY ./filesystem /tmp/filesystem
 
 # sync ./filesystem with root filesystem
 RUN rsync -a /tmp/filesystem/ / && \
@@ -80,6 +77,7 @@ RUN systemctl enable systemd-networkd
 RUN systemctl enable netplan-apply.service
 RUN systemctl enable tailscaled
 RUN systemctl enable docker
+RUN systemctl enable sshd
 RUN systemctl set-default graphical.target
 
 RUN dconf update
