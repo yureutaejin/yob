@@ -53,10 +53,7 @@ jobs:
       - name: Build OCI image
         run: |
           echo "::group::Build OCI image:"
-          make build-oci-bootc-image \
-            OCI_REGISTRY=${{ inputs.oci_registry }} \
-            OCI_IMAGE_REPO=${{ inputs.oci_image_repo }} \
-            OCI_IMAGE_TAG=${{ inputs.oci_image_tag }}
+          make build-oci-bootc-image
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
@@ -66,10 +63,7 @@ jobs:
       - name: Push OCI image to registry
         run: |
           echo "::group::Push OCI image to registry:"
-          make push-oci-image \
-            OCI_REGISTRY=${{ inputs.oci_registry }} \
-            OCI_IMAGE_REPO=${{ inputs.oci_image_repo }} \
-            OCI_IMAGE_TAG=${{ inputs.oci_image_tag }}
+          make push-oci-image 
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
