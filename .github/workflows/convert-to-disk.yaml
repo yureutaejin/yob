@@ -81,12 +81,14 @@ jobs:
 
       - name: Convert OCI image into specified disk format
         run: |
+          echo "::group::Convert OCI image into specified disk format:"
           make convert-to-disk-image \
             OCI_REGISTRY=${{ inputs.oci_registry }} \
             OCI_IMAGE_REPO=${{ inputs.oci_image_repo }} \
             OCI_IMAGE_TAG=${{ inputs.oci_image_tag }} \
             DISK_FORMAT=${{ inputs.disk_format }} \
             ROOTFS=${{ inputs.rootfs }}
+          echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
