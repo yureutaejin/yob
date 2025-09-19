@@ -19,10 +19,10 @@ on:
         required: true
         default: 'quay.io'
         type: string
-      oci_image_repo_path:
+      oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
-        default: 'user/my-repo'
+        default: 'quay.io/'
         type: string
       oci_image_tag:
         description: 'Type the image tag you want to use'
@@ -38,6 +38,11 @@ jobs:
         - ${{ inputs.runner-label }}
 
     steps:
+      - name: Check requirements
+        run: |
+          make --version &> /dev/null || { echo "Make is not installed"; exit 1; }
+          sudo podman --version &> /dev/null || { echo "no podman or no permission to run podman in root"; exit 1; }
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -47,10 +52,22 @@ jobs:
 
       - name: Build OCI image
         run: |
-          podman build \
-            --build-arg GIT_COMMIT_HASH=$(git rev-parse --short=12 HEAD) \
-            -t ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }} .
+          make build-oci-bootc-image \
+            OCI_REGISTRY=${{ inputs.oci_registry }} \
+            OCI_IMAGE_REPO=${{ inputs.oci_image_repo }} \
+            OCI_IMAGE_TAG=${{ inputs.oci_image_tag }}
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
 
       - name: Push OCI image to registry
         run: |
-          podman image push ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
+          make push-oci-image \
+            OCI_REGISTRY=${{ inputs.oci_registry }} \
+            OCI_IMAGE_REPO=${{ inputs.oci_image_repo }} \
+            OCI_IMAGE_TAG=${{ inputs.oci_image_tag }}
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}

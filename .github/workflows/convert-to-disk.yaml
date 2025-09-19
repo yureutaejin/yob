@@ -19,7 +19,7 @@ on:
         required: true
         default: 'quay.io'
         type: string
-      oci_image_repo_path:
+      oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
         default: 'user/my-repo'
@@ -39,6 +39,11 @@ on:
         required: true
         default: 'iso'
         type: string
+      rootfs:
+        description: 'Type the root filesystem you want to use (e.g. `ext4`, `xfs`, `btrfs`)'
+        required: false
+        default: 'btrfs'
+        type: string
 
 jobs:
   convert-to-disk-image:
@@ -48,6 +53,11 @@ jobs:
         - ${{ inputs.runner-label }}
 
     steps:
+      - name: Check requirements
+        run: |
+          make --version &> /dev/null || { echo "Make is not installed"; exit 1; }
+          sudo podman --version &> /dev/null || { echo "no podman or no permission to run podman in root"; exit 1; }
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -57,7 +67,7 @@ jobs:
 
       - name: Pull OCI image
         run: |
-          sudo podman pull ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
+          sudo podman pull ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo }}:${{ inputs.oci_image_tag }}
 
       - name: Configure kickstart
         run: |
@@ -71,17 +81,18 @@ jobs:
 
       - name: Convert OCI image into specified disk format
         run: |
-          sudo podman run --rm \
-            --privileged \
-            --security-opt label=type:unconfined_t \
-            -v ./image-builder-output:/output \
-            -v ./config.toml:/config.toml:ro \
-            -v /var/lib/containers/storage:/var/lib/containers/storage \
-            quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532 \
-            --type ${{ inputs.disk_format }} \
-            --use-librepo=True \
-            --rootfs btrfs \
-            ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo_path }}:${{ inputs.oci_image_tag }}
+          make convert-to-disk-image \
+            OCI_REGISTRY=${{ inputs.oci_registry }} \
+            OCI_IMAGE_REPO=${{ inputs.oci_image_repo }} \
+            OCI_IMAGE_TAG=${{ inputs.oci_image_tag }} \
+            DISK_FORMAT=${{ inputs.disk_format }} \
+            ROOTFS=${{ inputs.rootfs }}
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          DISK_FORMAT: ${{ inputs.disk_format }}
+          ROOTFS: ${{ inputs.rootfs }}
 
       - name: Save disk format image
         run: |
