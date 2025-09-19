@@ -5,7 +5,7 @@ DISK_FORMAT ?= iso
 ROOTFS ?= btrfs
 ARCH ?= amd64
 BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532
-GIT_COMMIT_HASH ?= $(shell git rev-parse --short=12 HEAD || echo "notgitrepo123")
+GIT_COMMIT_HASH ?= $(shell git rev-parse HEAD || echo "notgitrepo123")
 
 .PHONY: build-oci-bootc-image
 build-oci-bootc-image:

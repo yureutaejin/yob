@@ -59,6 +59,7 @@ jobs:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          GIT_COMMIT_HASH: ${{ github.sha }}
 
       - name: Push OCI image to registry
         run: |
