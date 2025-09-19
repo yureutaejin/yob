@@ -73,11 +73,11 @@ RUN dnf install -y \
 
 COPY --from=step-external /tmp /tmp
 
-RUN /tmp/external/aws/install
+RUN /tmp/external/aws/install && rm -rf /tmp/external/aws
 
 # sync {filesystem,external}
-RUN cp -a /tmp/filesystem/ / && \
-    cp -a /tmp/external/ /usr/bin/ && \
+RUN cp -a /tmp/filesystem/. / && \
+    cp -a /tmp/external/. /usr/bin/ && \
     rm -rf /tmp/*
 
 # systemd settings
