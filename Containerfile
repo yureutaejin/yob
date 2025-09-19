@@ -1,34 +1,10 @@
 ARG BASE="quay.io/fedora/fedora-bootc:42"
 ARG GIT_COMMIT_HASH
 
-FROM ${BASE} AS step-final
-ARG GIT_COMMIT_HASH
-
-# See https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
-LABEL containers.bootc=1
-# See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
-LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
+FROM ${BASE} AS step-scratch
 
 # See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
-
-# Install packages from source OCI image
-# e.g. COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
-
-# Install packages from source
-RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
-    tar xz -C /usr/bin/ starship
-RUN curl -fsSL https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.tar.gz | \
-    tar xz -C /usr/bin/ dive
-RUN curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64.tar.gz | \
-    tar xz -C /usr/bin/ ./yq_linux_amd64
-RUN curl -fsSL https://github.com/astral-sh/uv/releases/download/0.8.18/uv-x86_64-unknown-linux-gnu.tar.gz | \
-    tar xz -C /usr/bin/ --strip-components=1
-
-RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws
 
 ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
@@ -40,6 +16,35 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
 RUN dnf install -y \
 	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
 	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+FROM step-scratch AS step-external
+
+# Install packages from source OCI image
+# e.g. COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
+RUN dnf install -y unzip
+
+# Install packages from source
+RUN mkdir -p /tmp/external
+RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
+    tar xz -C /tmp/external/ starship
+RUN curl -fsSL https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.tar.gz | \
+    tar xz -C /tmp/external/ dive
+RUN curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64.tar.gz | \
+    tar xz -C /tmp/external/ ./yq_linux_amd64
+RUN curl -fsSL https://github.com/astral-sh/uv/releases/download/0.8.18/uv-x86_64-unknown-linux-gnu.tar.gz | \
+    tar xz -C /tmp/external/ --strip-components=1
+RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/external/awscliv2.zip && \
+    unzip /tmp/external/awscliv2.zip -d /tmp/external/
+
+COPY ./filesystem /tmp/filesystem
+
+FROM step-scratch AS step-final
+ARG GIT_COMMIT_HASH
+
+# See https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
+LABEL containers.bootc=1
+# See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
+LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
 
 # dnf package installation
 ## See also https://fedoraproject.org/wiki/Changes/UnprivilegedUpdatesAtomicDesktops
@@ -58,7 +63,6 @@ RUN dnf install -y \
     systemd-networkd \
     netplan.io \
     vim \
-    unzip \
     wireshark \
     bash-completion \
     code \
@@ -67,11 +71,14 @@ RUN dnf install -y \
     && dnf clean all && \
     rm -rf /var/cache/libdnf5
 
-COPY ./filesystem /tmp/filesystem
+COPY --from=step-external /tmp /tmp
 
-# sync ./filesystem with root filesystem
-RUN rsync -a /tmp/filesystem/ / && \
-    rm -rf /tmp/filesystem
+RUN /tmp/external/aws/install
+
+# sync {filesystem,external}
+RUN cp -a /tmp/filesystem/ / && \
+    cp -a /tmp/external/ /usr/bin/ && \
+    rm -rf /tmp/*
 
 # systemd settings
 RUN systemctl disable NetworkManager
