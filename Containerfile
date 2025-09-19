@@ -1,8 +1,7 @@
 ARG BASE="quay.io/fedora/fedora-bootc:42"
 ARG GIT_COMMIT_HASH
 
-FROM ${BASE}
-
+FROM ${BASE} AS step-final
 ARG GIT_COMMIT_HASH
 
 # See https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
@@ -14,14 +13,18 @@ LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
 RUN mkdir -p /var/roothome
 
 # Install packages from source OCI image
-COPY --from=docker.io/mikefarah/yq:4 /usr/bin/yq /usr/bin/yq
-COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
+# e.g. COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
 
 # Install packages from source
 RUN curl -fsSL https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-gnu.tar.gz | \
     tar xz -C /usr/bin/ starship
 RUN curl -fsSL https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.tar.gz | \
     tar xz -C /usr/bin/ dive
+RUN curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64.tar.gz | \
+    tar xz -C /usr/bin/ ./yq_linux_amd64
+RUN curl -fsSL https://github.com/astral-sh/uv/releases/download/0.8.18/uv-x86_64-unknown-linux-gnu.tar.gz | \
+    tar xz -C /usr/bin/ --strip-components=1
+
 RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && \
     unzip awscliv2.zip && \
     ./aws/install && \
