@@ -7,12 +7,12 @@ on:
       runner-group:
         description: 'Type the runner group'
         required: true
-        default: 'Default'
+        default: 'private-runners-yuntae'
         type: string
       runner-label:
         description: 'Type label of runner'
         required: true
-        default: 'x64'
+        default: 'ytminipc001'
         type: string
       oci_registry:
         description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
@@ -22,7 +22,7 @@ on:
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
-        default: 'user/my-repo'
+        default: 'teamthepioneers/immutable-os-bootc'
         type: string
       oci_image_tag:
         description: 'Type the image tag you want to use'
