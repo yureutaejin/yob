@@ -1,5 +1,4 @@
 ARG BASE="quay.io/fedora/fedora-bootc:42@sha256:f30f6af0899f91e886622b47625cb7860a249e4ff044f0dacb06e2e93b3e9dcb"
-ARG GIT_COMMIT_HASH
 
 FROM ${BASE} AS step-scratch
 
@@ -39,12 +38,6 @@ RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/
 COPY ./filesystem /tmp/filesystem
 
 FROM step-scratch AS step-final
-ARG GIT_COMMIT_HASH
-
-# See https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
-LABEL containers.bootc=1
-# See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
-LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
 
 # dnf package installation
 ## See also https://fedoraproject.org/wiki/Changes/UnprivilegedUpdatesAtomicDesktops
@@ -95,3 +88,9 @@ RUN dconf update
 
 # static analysis checks
 RUN bootc container lint
+
+# See https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
+LABEL containers.bootc=1
+# See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
+ARG GIT_COMMIT_HASH
+LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
