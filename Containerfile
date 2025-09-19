@@ -93,4 +93,9 @@ RUN bootc container lint
 LABEL containers.bootc=1
 # See https://specs.opencontainers.org/image-spec/annotations/#pre-defined-annotation-keys
 ARG GIT_COMMIT_HASH
+LABEL org.opencontainers.image.source="https://github.com/teamthepioneers/immutable-os-bootc"
+LABEL org.opencontainers.image.url="https://github.com/teamthepioneers/immutable-os-bootc"
+LABEL org.opencontainers.image.title="immutable-os-bootc"
+LABEL org.opencontainers.image.description="Immutable OS image based on bootc project made by teamthepioneers"
+LABEL org.opencontainers.image.authors="github: yureutaejin, linkedin: yuntae-jin-4bab97201"
 LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}

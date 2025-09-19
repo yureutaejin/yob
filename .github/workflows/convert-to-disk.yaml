@@ -66,8 +66,11 @@ jobs:
           sudo podman login -u=${{ secrets.OCI_REGISTRY_BOT_USERNAME }} -p=${{ secrets.OCI_REGISTRY_BOT_PASSWORD }} ${{ inputs.oci_registry }}
 
       - name: Pull OCI image
+        id: pull-oci-image
         run: |
-          sudo podman pull ${{ inputs.oci_registry }}/${{ inputs.oci_image_repo }}:${{ inputs.oci_image_tag }}
+          full_image_tag='${{ inputs.oci_registry }}/${{ inputs.oci_image_repo }}:${{ inputs.oci_image_tag }}'
+          echo "full_image_tag=${full_image_tag}" | tee -a $GITHUB_OUTPUT
+          sudo podman pull ${full_image_tag}
 
       - name: Configure kickstart
         run: |
@@ -93,5 +96,11 @@ jobs:
 
       - name: Save disk format image
         run: |
-          sudo cp -rf ./image-builder-output /opt/
+          sudo chown -R $USER:$USER ./image-builder-output
+          IMAGE_DIGEST=$(sudo podman inspect ${full_image_tag} -f json | \
+            jq -r .[0].Digest | cut -d ':' -f2)
+          sudo mkdir -p /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}
+          sudo mv image-builder-output /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}/${{ inputs.disk_format }}
           sudo rm -rf ./image-builder-output
+        env:
+          full_image_tag: ${{ steps.pull-oci-image.outputs.full_image_tag }}
