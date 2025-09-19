@@ -5,11 +5,12 @@ DISK_FORMAT ?= iso
 ROOTFS ?= btrfs
 ARCH ?= amd64
 BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532
+GIT_COMMIT_HASH ?= $(shell git rev-parse --short=12 HEAD || echo "notgitrepo123")
 
 .PHONY: build-oci-bootc-image
 build-oci-bootc-image:
 	sudo podman build \
-	--build-arg GIT_COMMIT_HASH=$(git rev-parse --short=12 HEAD) \
+	--build-arg GIT_COMMIT_HASH=$(GIT_COMMIT_HASH) \
 	-t ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
 	.
 
