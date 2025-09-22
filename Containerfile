@@ -1,4 +1,4 @@
-ARG BASE="quay.io/fedora/fedora-bootc:42@sha256:f30f6af0899f91e886622b47625cb7860a249e4ff044f0dacb06e2e93b3e9dcb"
+ARG BASE="quay.io/fedora/fedora-bootc:42"
 
 FROM ${BASE} AS step-scratch
 
