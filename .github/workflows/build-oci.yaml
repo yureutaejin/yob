@@ -48,7 +48,11 @@ jobs:
 
       - name: Login to OCI Registry
         run: |
-          sudo podman login -u=${{ secrets.OCI_REGISTRY_BOT_USERNAME }} -p=${{ secrets.OCI_REGISTRY_BOT_PASSWORD }} ${{ inputs.oci_registry }}
+          make login-public-oci-registry
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_REGISTRY_USERNAME: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
+          OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
 
       - name: Build OCI image
         run: |

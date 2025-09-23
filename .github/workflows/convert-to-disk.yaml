@@ -63,24 +63,29 @@ jobs:
 
       - name: Login to OCI Registry
         run: |
-          sudo podman login -u=${{ secrets.OCI_REGISTRY_BOT_USERNAME }} -p=${{ secrets.OCI_REGISTRY_BOT_PASSWORD }} ${{ inputs.oci_registry }}
+          make login-public-oci-registry
+        env:
+          OCI_REGISTRY_USERNAME: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
+          OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
 
       - name: Pull OCI image
-        id: pull-oci-image
         run: |
-          full_image_tag='${{ inputs.oci_registry }}/${{ inputs.oci_image_repo }}:${{ inputs.oci_image_tag }}'
-          echo "full_image_tag=${full_image_tag}" | tee -a $GITHUB_OUTPUT
-          sudo podman pull ${full_image_tag}
-
-      - name: Configure kickstart
-        run: |
-          sed -i "s|{{ inputs.default_disk }}|${DEFAULT_DISK}|g" config.toml
-          sed -i "s|{{ secret.DEFAULT_USER_NAME }}|${DEFAULT_USER_NAME}|g" config.toml
-          sed -i "s|{{ secret.DEFAULT_USER_PASSWD }}|${DEFAULT_USER_PASSWD}|g" config.toml
+          echo "::group::Pull OCI image:"
+          make pull-oci-image
+          echo "::endgroup::"
         env:
-          DEFAULT_DISK: ${{ inputs.default_disk }}
-          DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
-          DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+
+      - name: Save image as tar
+        run: |
+          make save-image-as-tar
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
 
       - name: Convert OCI image into specified disk format
         run: |
@@ -92,15 +97,21 @@ jobs:
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
           DISK_FORMAT: ${{ inputs.disk_format }}
+          DEFAULT_DISK: ${{ inputs.default_disk }}
+          DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
+          DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
           ROOTFS: ${{ inputs.rootfs }}
 
       - name: Save disk format image
         run: |
           sudo chown -R $USER:$USER ./image-builder-output
-          IMAGE_DIGEST=$(sudo podman inspect ${full_image_tag} -f json | \
+          IMAGE_DIGEST=$(sudo docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \
             jq -r .[0].Digest | cut -d ':' -f2)
           sudo mkdir -p /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}
-          sudo mv image-builder-output /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}/${{ inputs.disk_format }}
+          sudo mv image-builder-output /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}/${DISK_FORMAT}
           sudo rm -rf ./image-builder-output
         env:
-          full_image_tag: ${{ steps.pull-oci-image.outputs.full_image_tag }}
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          DISK_FORMAT: ${{ inputs.disk_format }}
