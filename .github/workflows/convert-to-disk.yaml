@@ -105,8 +105,13 @@ jobs:
       - name: Save disk format image
         run: |
           sudo chown -R $USER:$USER ./image-builder-output
-          IMAGE_DIGEST=$(sudo docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \
+          IMAGE_DIGEST=$(docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \
             jq -r .[0].Digest | cut -d ':' -f2)
+          [ -z "${IMAGE_DIGEST}" ] || [ -z "${IMAGE_DIGEST}" == "null" ] && \
+          IMAGE_DIGEST=$(
+            docker buildx imagetools inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
+            --format "{{ json .Manifest}} | \
+            jq -r .digest | cut -d ':' -f2")
           sudo mkdir -p /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}
           sudo mv image-builder-output /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}/${DISK_FORMAT}
           sudo rm -rf ./image-builder-output
