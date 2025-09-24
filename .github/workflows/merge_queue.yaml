@@ -1,0 +1,24 @@
+name: "Merge Queue"
+
+on:
+  pull_request:
+    branches: [ main ]
+    types:
+      - opened
+      - ready_for_review
+      - reopened
+      - synchronize
+  merge_group:
+    types: [checks_requested]
+
+jobs:
+  build-oci:
+    if: ${{ github.event.pull_request.draft == false }}
+    uses: ./.github/workflows/_build-oci-container.yaml
+    secrets: inherit
+    with:
+      runner-group: 'private-runners-yuntae'
+      runner-label: 'ytminipc001'
+      oci_registry: 'quay.io'
+      oci_image_repo: 'teamthepioneers/immutable-os-bootc'
+      oci_image_tag: 'merge-queue-${{ github.event_name }}'

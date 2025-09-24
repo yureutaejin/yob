@@ -3,15 +3,15 @@ contents = """
 graphical
 timezone Asia/Seoul
 
-ignoredisk --only-use={{ inputs.default_disk }}
-clearpart --all --initlabel --drives={{ inputs.default_disk }}
+ignoredisk --only-use={DEFAULT_DISK}
+clearpart --all --initlabel --drives={DEFAULT_DISK}
 autopart --type=plain
 
-reboot
+user --name={DEFAULT_USER_NAME} --uid=1000 --groups=wheel --password {DEFAULT_USER_PASSWD} --plaintext
 
-user --name=ytjin --uid=1000 --groups=wheel --password ${{ secret.default_user_password }} --plaintext
-
-%post --erroronfail
-systemctl enable docker
+%post
+echo "$(hostnamectl -j | jq -r .Chassis)-$(hostnamectl -j | jq -r .MachineID | cut -c 1-9)" | tee /etc/hostname > /dev/null
 %end
+
+reboot
 """
