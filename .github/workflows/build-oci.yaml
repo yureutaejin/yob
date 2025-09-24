@@ -1,5 +1,5 @@
 name: "Build OCI container"
-run-name: "Build bootc - ${{ github.ref }}"
+run-name: "Build OCI container - ${{ github.actor }}"
 
 on:
   workflow_dispatch:

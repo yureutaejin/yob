@@ -1,5 +1,5 @@
 name: "Convert OCI Container to Disk Image"
-run-name: "Build bootc - ${{ github.ref }}"
+run-name: "Convert OCI Container to Disk Image - ${{ github.actor }}"
 
 on:
   workflow_dispatch:
