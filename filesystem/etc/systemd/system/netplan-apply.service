@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply netplan configuration
+DefaultDependencies=no
+After=systemd-networkd.service
+Before=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/netplan apply
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+[org/gnome/desktop/background]
+
+picture-uri='file:///usr/share/backgrounds/custom/custom-wallpaper.jpg'
+picture-options='spanned'
+primary-color='000000'
+secondary-color='FFFFFF'
