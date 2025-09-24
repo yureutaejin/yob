@@ -1,10 +1,10 @@
 # Immutable OS - bootc
 
-(Experimental) Repository for building immutable OS using [bootc](https://bootc-dev.github.io/)
+Repository for building Immutable OS using [bootc](https://bootc-dev.github.io/)
 
-## 1. Build OCI image with bootable container
-
-![Bootable Container](https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs)
+| bootc container image | bootc pipeline |
+|-----------------------|----------------|
+| <img src="https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs" width="400" alt="bootc container"> | <img src="https://developers.redhat.com/sites/default/files/styles/keep_original/public/image-mode-rhel.png.webp?itok=5rt7duz8" width="400" alt="bootc pipeline"> |
 
 As everybody knows, The Linux container usually shares kernel with host OS,  
 so that we can easily create a "Container" which is more lightweight and faster than Virtual Machine.
@@ -19,68 +19,74 @@ Unlike usual OCI containers, the base OCI container (so called, bootable contain
 
 So we can create OS image using OCI container techniques which is familiar to modern developers/engineers.
 
-### How to build it
 
-> [!NOTE]
-> Containerfile is the format of Podman. But it is okay to build it with Docker. (OCI format)
+## Quick Start (for local Hands-on)
 
-1. Clone this repository
-2. Edit [Containerfile](./Containerfile) as needed
-   - Currently, OCI container from RHEL OS (especially, Atomic OS) provides bootable container.
-     - Official RHEL Family : fedora-{bootc,Silverblue,CoreOS}, Almalinux-bootc, CentOS-bootc, RHEL for edge, RHEL CoreOS
-     - Custom : Project Universal Blue, HeliumOS
-   - `/usr` will be read-only. Put read-only data and executables in `/usr`
-   - Put configuration files in `/usr` or `/etc`
-   - Put "data" (log, databases, etc.) underneath `/var`
-3. Build the OCI container image
-   - `{docker,podman,etc} build -t {image_name}:{tag} .`
-4. Use it like usual OCI containers.
-   - ***e.g.*** `{docker,podman,etc} run -it {image_name}:{tag} /bin/bash`
+Quick start without editing few configurations.
+This section targets that machine to deploy OS is Bare Metal (Laptop, Desktop, etc.)
 
-## 2. Convert OCI image to bootable disk
+### Prerequisites
 
-> [!NOTE]
-> Currently, bootc-image-builder is not stable yet.
->
-> (It highly depends on podman runtime which is popular for rootless, even though it uses `privileged` and `sudo` to convert OCI to bootable images)
+- OS
+  - Linux (RHEL Family is recommended)
+- Podman
+  - BIB(bootc-image-builder) uses `/var/lib/containers/storage` of host OS which podman, buildah, skopeo use.
+  - `[[ -d /var/lib/containers/storage ]] || echo "Please install podman/buildah and pull any container first"`
+- Docker
+  - `curl -fsSL https://get.docker.com | sh`
+- Make
+  - To use `make` command for defined [tasks](./Makefile)
+- OCI Registry
+  - Get your account of OCI Registry (e.g. DockerHub, Quay.io, etc.)
+  - Currently, Private Registry is not supported (will update guideline soon)
+- Just define local variables in host shell without fixing Makefile (Refer to default value in [Makefile](./Makefile))
+  - OCI_REGISTRY
+  - OCI_IMAGE_REPO
+  - OCI_IMAGE_TAG
+  - OCI_REGISTRY_USERNAME
+  - OCI_REGISTRY_PASSWORD
+  - DEFAULT_DISK (e.g. nvme0n1, sda...)
+- Machine to run OS you will create
+  - Bare Metal (Laptop, Desktop, etc.)
+  - Virtual Machine
+  - Cloud
 
-Please refer to https://github.com/osbuild/bootc-image-builder
+### 1. Build OCI Container
 
-```bash
-mkdir -p ./output
+1. `make login-public-oci-registry`
+2. `make build-oci-bootc-image`
+3. `make push-oci-bootc-image`
 
-# bootc-image-builder does not pull target image
-sudo podman pull {source_image:tag}
+### 2. Convert OCI Container to Bootable Disk Image
 
-# It sacrifices the benefit of rootless Container Runtime
-# if you add package repository yourself(not based on $pkgsystem), `iso` option makes problems sometimes
-sudo podman run \
-    --rm -it \
-    --privileged \
-    --pull=newer \
-    --security-opt label=type:unconfined_t \
-    -v ./output:/output \
-    -v ./config.toml:/config.toml:ro \
-    -v /var/lib/containers/storage:/var/lib/containers/storage \
-    quay.io/centos-bootc/bootc-image-builder:latest \
-    --type {iso,qcow2} \
-    --use-librepo=True \
-    --rootfs {ext4,btrfs,xfs} \
-    {target_image:tag}
-```
+1. `make save-image-as-tar`
+2. `make convert-to-disk-image`
 
-## Wiki
+### 3. Make bootable Disk
 
-- OCI Registry for OS based on bootc
-  - quay.io/yuntae/immutable-os-bootc
-- Memo for packages
-  - container-management : (podman, buildah, skopeo)
+There are too many ways to make bootable disk.
+Just leave Bare Metal case for now.
 
-### Related Issues
+- (Bare Metal) Recommend to flash USB drive (3.0, color blue) with at least 8GB
+  - [Ventoy](https://www.ventoy.net/en/index.html)
+  - [BalenaEtcher](https://etcher.balena.io/)
 
-- [systemd-remount-fs.service failed to start](https://discussion.fedoraproject.org/t/systemd-remount-fs-service-failed-to-start/148619)
+### 4. Boot OS
 
-## Appendix
+Boot with created bootable disk
+Since we've set host's config with [config.toml](./config.toml) already, Just wait until first booting is done.
 
-- `podman login -u='{username}' -p='{credential}' {registry type}` saved credentials in `/run/user/{UID}/containers/auth.json`
-  - https://stackoverflow.com/questions/77412593/how-are-docker-credentials-saved-in-podman
+### 5. Rollback/Upgrade/Switch OS
+
+No need to make bootable disk again.
+If you push new image to OCI Registry, It will be available in next reboot.
+Just choose command and run it on running OS and reboot.
+
+- `sudo bootc upgrade`
+  - Upgrade to latest pushed image with same tag you booted
+- `sudo bootc switch OCI_REGISTRY/OCI_IMAGE_REPO:OCI_IMAGE_TAG`
+  - Switch to specified bootc image
+  - e.g. `sudo bootc switch quay.io/fedora/fedora-bootc:latest`
+- `sudo bootc rollback`
+  - Rollback to previous image
+  - (Important) OS will keep 1 previous image
