@@ -4,6 +4,7 @@ OCI_IMAGE_TAG ?= latest
 OCI_REGISTRY_USERNAME ?= your_username
 OCI_REGISTRY_PASSWORD ?= your_password
 DISK_FORMAT ?= iso
+DEFAULT_DISK ?= nvme0n1
 DEFAULT_USER_NAME ?= pioneers
 DEFAULT_USER_PASSWD ?= pioneers1234
 ROOTFS ?= btrfs

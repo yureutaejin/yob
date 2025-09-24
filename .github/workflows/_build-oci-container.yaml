@@ -66,10 +66,10 @@ jobs:
         - ${{ inputs.runner-label }}
 
     steps:
-      - name: Check requirements
+      - name: Verify prerequisites
         run: |
           make --version &> /dev/null || { echo "Make is not installed"; exit 1; }
-          sudo podman --version &> /dev/null || { echo "no podman or no permission to run podman in root"; exit 1; }
+          docker --version &> /dev/null || { echo "Docker is not installed"; exit 1; }
 
       - name: Checkout Repository
         uses: actions/checkout@v4
