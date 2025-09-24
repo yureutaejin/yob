@@ -2,9 +2,25 @@
 
 ## Index
 
+<!-- no toc -->
+- [Contributors](#contributors)
 - [Introduction](#introduction)
 - [Overall pipeline workflows](#overall-pipeline-workflows)
 - [Quick Start](#quick-start-for-local-hands-on)
+
+## Translation
+
+- [한국어](./README-KO.md)
+
+## Contributors
+
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/yureutaejin"><img src="https://avatars.githubusercontent.com/u/85734054?v=4" width="100px;" alt=""/><br /><sub><b>
+Yuntae</b></sub></a><br /></td>
+    <td align="center"><a href="https://github.com/charlie3965"><img src="https://avatars.githubusercontent.com/u/19777578?v=4" width="100px;" alt=""/><br /><sub><b>
+Chunsoo</b></sub></a><br /></td>
+</table>
 
 ## Introduction
 
