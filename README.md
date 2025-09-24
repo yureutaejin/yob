@@ -1,10 +1,16 @@
 # Immutable OS - bootc
 
+## Index
+
+- [Introduction](#introduction)
+- [Overall pipeline workflows](#overall-pipeline-workflows)
+- [Quick Start](#quick-start-for-local-hands-on)
+
+## Introduction
+
 Repository for building Immutable OS using [bootc](https://bootc-dev.github.io/)
 
-| bootc container image | bootc pipeline |
-|-----------------------|----------------|
-| <img src="https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs" width="400" alt="bootc container"> | <img src="https://developers.redhat.com/sites/default/files/styles/keep_original/public/image-mode-rhel.png.webp?itok=5rt7duz8" width="400" alt="bootc pipeline"> |
+<img src="https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs" width="500" alt="bootc container">
 
 As everybody knows, The Linux container usually shares kernel with host OS,  
 so that we can easily create a "Container" which is more lightweight and faster than Virtual Machine.
@@ -19,6 +25,32 @@ Unlike usual OCI containers, the base OCI container (so called, bootable contain
 
 So we can create OS image using OCI container techniques which is familiar to modern developers/engineers.
 
+## Overall pipeline workflows
+
+Currently, this project is configured by following diagram below.
+
+```mermaid
+  sequenceDiagram
+    autonumber
+    participant container_builder as Container Builder
+    participant disk_converter as Disk Converter
+    participant oci_registry as OCI Registry
+    participant disk_storage as Disk Storage
+    participant git_repo as Git Repository
+    participant production as Production Env
+    
+    container_builder ->> git_repo: Checkout source
+    container_builder ->> oci_registry: Pull base container
+    container_builder ->> container_builder: Build with Containerfile
+    container_builder ->> oci_registry: Push built container
+    
+    disk_converter ->> oci_registry: Pull container
+    disk_converter ->> disk_converter: Convert container to disk image
+    disk_converter ->> disk_storage: Store disk image
+    
+    production ->> disk_storage: Retrieve disk image
+    production ->> production: Deploy disk image
+```
 
 ## Quick Start (for local Hands-on)
 
