@@ -11,8 +11,42 @@ on:
   merge_group:
     types: [checks_requested]
 
+permissions:
+  issues: write
+  pull-requests: write
 jobs:
+  lint-dockerfile:
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile
+        id: lint-dockerfile
+        uses: ./.github/actions/lint-dockerfile
+        with:
+          dockerfile-path: ./Dockerfile
+          config-path: ./tools/hadolint.yaml
+    
+      - name: Add Dockerfile Lint Result to PR Comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const title = "### Dockerfile Lint Result";
+            const artifact = fs.readFileSync('${{ steps.lint-dockerfile.outputs.artifact }}', 'utf8');
+            const commentBody = `${title}\n\`\`\`json\n${artifact}\n\`\`\``;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+
   build-oci:
+    needs: lint-dockerfile
     if: ${{ github.event.pull_request.draft == false }}
     uses: ./.github/workflows/_build-oci-container.yaml
     secrets: inherit

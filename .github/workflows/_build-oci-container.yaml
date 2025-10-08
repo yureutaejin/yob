@@ -70,7 +70,6 @@ jobs:
         run: |
           make --version &> /dev/null || { echo "Make is not installed"; exit 1; }
           docker --version &> /dev/null || { echo "Docker is not installed"; exit 1; }
-          hadolint --version &> /dev/null || { echo "Hadolint is not installed"; exit 1; }
 
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -82,36 +81,6 @@ jobs:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_REGISTRY_USERNAME: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
           OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
-
-      - name: Check Dockerfile with Hadolint
-        run: |
-          set -Eeuo pipefail
-          make dockerfile-lint
-          
-          echo '### Dockerfile Linter Result' | tee -a $GITHUB_STEP_SUMMARY
-          echo '\n' | tee -a $GITHUB_STEP_SUMMARY
-          echo '```json' | tee -a $GITHUB_STEP_SUMMARY
-          cat dockerfile-lint.json | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' | tee -a $GITHUB_STEP_SUMMARY
-
-          cp -rf dockerfile-lint.json ${{ runner.temp }}/dockerfile-lint.json
-
-      - name: Add Hadolint result to PR comment
-        if: ${{ github.event_name == 'pull_request' && !startsWith(github.event.pull_request.head.ref, 'merge-queue/') }}
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const fs = require('fs');
-            const title = "### Dockerfile Linter Result";
-            const HadolintResults = fs.readFileSync('dockerfile-lint.json', 'utf8');
-            const commentBody = `${title}\n\`\`\`json\n${HadolintResults}\n\`\`\``;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody
-            });
 
       - name: Build OCI image
         run: |

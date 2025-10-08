@@ -19,8 +19,8 @@ build-oci-bootc-image:
 	-t ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
 	.
 
-.PHONY: dockerfile-lint
-dockerfile-lint:
+.PHONY: lint-dockerfile
+lint-dockerfile:
 	hadolint Dockerfile --config tools/hadolint.yaml -f json | \
 	jq -r | \
 	tee dockerfile-lint.json
