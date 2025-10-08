@@ -11,6 +11,8 @@ ROOTFS ?= btrfs
 ARCH ?= amd64
 BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532
 GIT_COMMIT_HASH ?= $(shell git rev-parse HEAD)
+AWS_BUCKET
+AWS_REGION ?= us-east-1
 
 .PHONY: build-oci-bootc-image
 build-oci-bootc-image:
@@ -58,4 +60,26 @@ convert-to-disk-image:
 	--type $(DISK_FORMAT) \
 	--use-librepo=True \
 	--rootfs $(ROOTFS) \
+	$(OCI_REGISTRY)/$(OCI_IMAGE_REPO):${OCI_IMAGE_TAG}
+
+# See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
+.PHONY: convert-to-ami
+convert-to-ami:
+	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
+	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml && \
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml && \
+	sudo docker run --rm \
+	--privileged \
+	--security-opt label=type:unconfined_t \
+	-v $HOME/.aws:/root/.aws:ro \
+	-v /var/lib/containers/storage:/var/lib/containers/storage \
+	-v ./config.toml:/config.toml:ro \
+	--env AWS_PROFILE=default \
+	$(BIB_CONTAINER) \
+	--type ami \
+	--rootfs $(ROOTFS) \
+	--aws-ami-name ${GIT_COMMIT_HASH:0:8} \
+	--aws-bucket ${AWS_BUCKET} \
+	--aws-region ${AWS_REGION} \ 
 	$(OCI_REGISTRY)/$(OCI_IMAGE_REPO):${OCI_IMAGE_TAG}
