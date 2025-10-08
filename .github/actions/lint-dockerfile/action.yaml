@@ -43,7 +43,7 @@ runs:
       run: |
         set -Eeuo pipefail
         echo '### Dockerfile Linter Result' | tee -a $GITHUB_STEP_SUMMARY
-        echo '\n' | tee -a $GITHUB_STEP_SUMMARY
+        echo 'commit hash : ${{ github.event.pull_request.head.sha }}' | tee -a $GITHUB_STEP_SUMMARY
         echo '```json' | tee -a $GITHUB_STEP_SUMMARY
         cat ${{ steps.lint-dockerfile.outputs.artifact }} | tee -a $GITHUB_STEP_SUMMARY
         echo '```' | tee -a $GITHUB_STEP_SUMMARY

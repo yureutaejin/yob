@@ -36,7 +36,7 @@ jobs:
             const fs = require('fs');
             const title = "### Dockerfile Lint Result";
             const artifact = fs.readFileSync('${{ steps.lint-dockerfile.outputs.artifact }}', 'utf8');
-            const commentBody = `${title}\n\`\`\`json\n${artifact}\n\`\`\``;
+            const commentBody = `${title}\ncommit hash : ${{ github.event.pull_request.head.sha }}\n\`\`\`json\n${artifact}\n\`\`\``;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
