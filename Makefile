@@ -11,7 +11,7 @@ ROOTFS ?= btrfs
 ARCH ?= amd64
 BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532
 GIT_COMMIT_HASH ?= $(shell git rev-parse HEAD)
-AWS_BUCKET
+AWS_BUCKET ?=
 AWS_REGION ?= us-east-1
 
 .PHONY: build-oci-bootc-image
