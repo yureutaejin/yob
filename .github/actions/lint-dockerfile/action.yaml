@@ -22,7 +22,7 @@ runs:
   steps:
     - name: Verifying Hadolint installation
       run: |
-        hadolint --version &> /dev/null || \
+        ${{ runner.temp }}/hadolint --version &> /dev/null || \
           curl -fsSL https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64 \
           -o ${{ runner.temp }}/hadolint && \
           chmod +x ${{ runner.temp }}/hadolint
@@ -36,7 +36,7 @@ runs:
         ${{ runner.temp }}/hadolint \
           --config ${{ inputs.config-path }} \
           --format json ${{ inputs.dockerfile-path }} | \
-        jq -r | tee ${{ runner.temp }}/dockerfile-lint.json
+        jq -r '.' | tee ${{ runner.temp }}/dockerfile-lint.json
       shell: bash
 
     - name: Summary of Dockerfile Linting

@@ -17,8 +17,9 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
 ## Refer to https://rpmfusion.org/
 RUN dnf install -y \
 	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm \
-	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-"$(rpm -E %fedora)".noarch.rpm \
-    unzip && \
+	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-"$(rpm -E %fedora)".noarch.rpm
+    
+RUN dnf install -y unzip && \
     dnf clean all && \
     rm -rf /var/cache/libdnf5
 

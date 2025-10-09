@@ -22,7 +22,7 @@ build-oci-bootc-image:
 .PHONY: lint-dockerfile
 lint-dockerfile:
 	hadolint Dockerfile --config tools/hadolint.yaml -f json | \
-	jq -r | \
+	jq -r '.' | \
 	tee dockerfile-lint.json
 
 .PHONY: login-public-oci-registry
