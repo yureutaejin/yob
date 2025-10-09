@@ -1,26 +1,34 @@
-ARG BASE="quay.io/fedora/fedora-bootc:42"
+ARG DEFAULT_BASE="quay.io/fedora/fedora-bootc:42"
 
-FROM ${BASE} AS step-scratch
+FROM ${DEFAULT_BASE} AS step-scratch
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
 
 # See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
 
-ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
-    && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
+    && printf "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
     | tee /etc/yum.repos.d/vscode.repo > /dev/null
 
 # Add RPM Fusion repositories
 ## Refer to https://rpmfusion.org/
 RUN dnf install -y \
-	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm \
+	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-"$(rpm -E %fedora)".noarch.rpm
+    
+RUN dnf install -y unzip && \
+    dnf clean all && \
+    rm -rf /var/cache/libdnf5
 
 FROM step-scratch AS step-external
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Install packages from source OCI image
 # e.g. COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
-RUN dnf install -y unzip
 
 # Install packages from source
 RUN mkdir -p /tmp/external
@@ -73,18 +81,18 @@ RUN cp -a /tmp/filesystem/. / && \
     cp -a /tmp/external/. /usr/bin/ && \
     rm -rf /tmp/*
 
-# systemd settings
-RUN systemctl disable NetworkManager
-RUN systemctl disable NetworkManager-wait-online
-RUN systemctl mask bootc-fetch-apply-updates.timer
-RUN systemctl enable systemd-networkd
-RUN systemctl enable netplan-apply.service
-RUN systemctl enable tailscaled
-RUN systemctl enable docker
-RUN systemctl enable sshd
-RUN systemctl set-default graphical.target
-
 RUN dconf update
+
+# systemd settings
+# RUN systemctl enable systemd-networkd
+# RUN systemctl enable netplan-apply.service
+# RUN systemctl disable NetworkManager
+# RUN systemctl disable NetworkManager-wait-online
+RUN systemctl mask bootc-fetch-apply-updates.timer && \
+    systemctl enable tailscaled && \
+    systemctl enable docker && \
+    systemctl enable sshd && \
+    systemctl set-default graphical.target
 
 # static analysis checks
 RUN bootc container lint
@@ -97,5 +105,5 @@ LABEL org.opencontainers.image.source="https://github.com/teamthepioneers/immuta
 LABEL org.opencontainers.image.url="https://github.com/teamthepioneers/immutable-os-bootc"
 LABEL org.opencontainers.image.title="immutable-os-bootc"
 LABEL org.opencontainers.image.description="Immutable OS image based on bootc project made by teamthepioneers"
-LABEL org.opencontainers.image.authors="github: yureutaejin, linkedin: yuntae-jin-4bab97201"
+LABEL org.opencontainers.image.authors="github: yureutaejin, linktree: https://linktr.ee/yureutaejin"
 LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}

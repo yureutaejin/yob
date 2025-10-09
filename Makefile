@@ -19,6 +19,12 @@ build-oci-bootc-image:
 	-t ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
 	.
 
+.PHONY: lint-dockerfile
+lint-dockerfile:
+	hadolint Dockerfile --config tools/hadolint.yaml -f json | \
+	jq -r '.' | \
+	tee dockerfile-lint.json
+
 .PHONY: login-public-oci-registry
 login-public-oci-registry:
 	docker login -u=$(OCI_REGISTRY_USERNAME) -p=$(OCI_REGISTRY_PASSWORD) $(OCI_REGISTRY)

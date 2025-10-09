@@ -1,0 +1,50 @@
+name: _dockerfile-lint
+description: |
+  Lint a Dockerfile using Hadolint (Add Checkout Repository actions before using this action)
+
+inputs:
+  dockerfile-path:
+    required: true
+    description: "Path to the Dockerfile to lint"
+    default: "Dockerfile"
+  config-path:
+    required: false
+    description: "Path to the Hadolint configuration file"
+    default: "tools/hadolint.yaml"
+
+outputs:
+  artifact:
+    description: "The path of the artifact file containing the linting results"
+    value: ${{ steps.lint-dockerfile.outputs.artifact }}
+
+runs:
+  using: composite
+  steps:
+    - name: Verifying Hadolint installation
+      run: |
+        ${{ runner.temp }}/hadolint --version &> /dev/null || \
+          curl -fsSL https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64 \
+          -o ${{ runner.temp }}/hadolint && \
+          chmod +x ${{ runner.temp }}/hadolint
+        ${{ runner.temp }}/hadolint --version
+      shell: bash
+
+    - name: Lint Dockerfile
+      id: lint-dockerfile
+      run: |
+        echo "artifact=${{ runner.temp }}/dockerfile-lint.json" | tee -a $GITHUB_OUTPUT
+        ${{ runner.temp }}/hadolint \
+          --config ${{ inputs.config-path }} \
+          --format json ${{ inputs.dockerfile-path }} | \
+        jq -r '.' | tee ${{ runner.temp }}/dockerfile-lint.json
+      shell: bash
+
+    - name: Summary of Dockerfile Linting
+      run: |
+        set -Eeuo pipefail
+        echo '### Dockerfile Linter Result' | tee -a $GITHUB_STEP_SUMMARY
+        echo 'commit hash : ${{ github.event.pull_request.head.sha || github.sha }}' | tee -a $GITHUB_STEP_SUMMARY
+        echo '```json' | tee -a $GITHUB_STEP_SUMMARY
+        cat ${{ steps.lint-dockerfile.outputs.artifact }} | tee -a $GITHUB_STEP_SUMMARY
+        echo '```' | tee -a $GITHUB_STEP_SUMMARY
+      shell: bash

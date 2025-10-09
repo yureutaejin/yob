@@ -1,0 +1,6 @@
+failure-threshold: warning
+no-fail: false
+override:
+  info:
+    - DL3040
+    - DL3041
