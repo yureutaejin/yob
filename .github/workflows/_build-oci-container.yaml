@@ -94,6 +94,7 @@ jobs:
           GIT_COMMIT_HASH: ${{ github.sha }}
 
       - name: Push OCI image to registry
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "::group::Push OCI image to registry:"
           make push-oci-image 
