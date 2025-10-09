@@ -11,13 +11,16 @@ ROOTFS ?= btrfs
 ARCH ?= amd64
 BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532
 GIT_COMMIT_HASH ?= $(shell git rev-parse HEAD)
-AWS_BUCKET ?=
+AWS_ACCESS_KEY_ID ?= your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY ?= your_aws_secret_access_key
+AWS_AMI_NAME ?= immutable-os-bootc-$(GIT_COMMIT_HASH:0:8)
+AWS_S3_BUCKET ?= immutable-os-bootc
 AWS_REGION ?= us-east-1
 
 .PHONY: build-oci-bootc-image
 build-oci-bootc-image:
 	docker build \
-	--build-arg GIT_COMMIT_HASH=$(GIT_COMMIT_HASH) \
+	--build-arg GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 	-t ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
 	.
 
@@ -29,7 +32,7 @@ lint-dockerfile:
 
 .PHONY: login-public-oci-registry
 login-public-oci-registry:
-	docker login -u=$(OCI_REGISTRY_USERNAME) -p=$(OCI_REGISTRY_PASSWORD) $(OCI_REGISTRY)
+	docker login -u=${OCI_REGISTRY_USERNAME} -p=${OCI_REGISTRY_PASSWORD} ${OCI_REGISTRY}
 
 .PHONY: save-image-as-tar
 save-image-as-tar:
@@ -37,49 +40,45 @@ save-image-as-tar:
 
 .PHONY: push-oci-image
 push-oci-image:
-	docker push $(OCI_REGISTRY)/$(OCI_IMAGE_REPO):${OCI_IMAGE_TAG}
+	docker push ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
 
 .PHONY: pull-oci-image
 pull-oci-image:
-	docker pull $(OCI_REGISTRY)/$(OCI_IMAGE_REPO):${OCI_IMAGE_TAG}
+	docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
 
 # See https://github.com/osbuild/bootc-image-builder
-.PHONY: convert-to-disk-image
-convert-to-disk-image:
+.PHONY: convert-to-iso
+convert-to-iso:
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
 	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
-	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml && \
-	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml && \
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
 	sudo docker run --rm \
 	--privileged \
 	--security-opt label=type:unconfined_t \
 	-v ./image-builder-output:/output \
 	-v /var/lib/containers/storage:/var/lib/containers/storage \
 	-v ./config.toml:/config.toml:ro \
-	$(BIB_CONTAINER) \
-	--type $(DISK_FORMAT) \
+	${BIB_CONTAINER} \
+	--type ${DISK_FORMAT} \
 	--use-librepo=True \
-	--rootfs $(ROOTFS) \
-	$(OCI_REGISTRY)/$(OCI_IMAGE_REPO):${OCI_IMAGE_TAG}
+	--rootfs ${ROOTFS} \
+	${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
 
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
 convert-to-ami:
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
-	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
-	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml && \
-	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml && \
 	sudo docker run --rm \
 	--privileged \
 	--security-opt label=type:unconfined_t \
-	-v $HOME/.aws:/root/.aws:ro \
 	-v /var/lib/containers/storage:/var/lib/containers/storage \
-	-v ./config.toml:/config.toml:ro \
-	--env AWS_PROFILE=default \
-	$(BIB_CONTAINER) \
-	--type ami \
-	--rootfs $(ROOTFS) \
-	--aws-ami-name ${GIT_COMMIT_HASH:0:8} \
-	--aws-bucket ${AWS_BUCKET} \
-	--aws-region ${AWS_REGION} \ 
-	$(OCI_REGISTRY)/$(OCI_IMAGE_REPO):${OCI_IMAGE_TAG}
+	--env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+	--env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+	${BIB_CONTAINER} \
+	--type ${DISK_FORMAT} \
+	--rootfs ${ROOTFS} \
+	--aws-ami-name ${AWS_AMI_NAME} \
+	--aws-bucket ${AWS_S3_BUCKET} \
+	--aws-region ${AWS_REGION} \
+	${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}

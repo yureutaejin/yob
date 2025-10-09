@@ -35,14 +35,19 @@ on:
         default: 'sda'
         type: string
       disk_format:
-        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`)'
+        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`, `ami`)'
         required: true
         default: 'iso'
         type: string
       rootfs:
         description: 'Type the root filesystem you want to use (e.g. `ext4`, `xfs`, `btrfs`)'
-        required: false
+        required: true
         default: 'btrfs'
+        type: string
+      aws_s3_bucket:
+        description: '(Only for `ami` disk format) Type the AWS S3 bucket name you want to use'
+        required: false
+        default: 'none'
         type: string
 
 jobs:
@@ -71,6 +76,14 @@ jobs:
           OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
           OCI_REGISTRY: ${{ inputs.oci_registry }}
 
+      - name: Configure AWS credentials
+        if: ${{ inputs.disk_format == 'ami' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
       - name: Pull OCI image
         run: |
           echo "::group::Pull OCI image:"
@@ -92,7 +105,7 @@ jobs:
       - name: Convert OCI image into specified disk format
         run: |
           echo "::group::Convert OCI image into specified disk format:"
-          make convert-to-disk-image
+          make convert-to-${DISK_FORMAT}
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
@@ -104,7 +117,8 @@ jobs:
           DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
           ROOTFS: ${{ inputs.rootfs }}
 
-      - name: Save disk format image
+      - name: Save iso format image
+        if: ${{ inputs.disk_format == 'iso' }}
         run: |
           sudo chown -R $USER:$USER ./image-builder-output
           IMAGE_DIGEST=$(docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \
