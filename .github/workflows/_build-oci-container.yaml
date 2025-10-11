@@ -4,11 +4,6 @@ run-name: "Build OCI container - ${{ github.actor }}"
 on:
   workflow_call:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
       runner-label:
         description: 'Type label of runner'
         required: true
@@ -32,11 +27,6 @@ on:
   
   workflow_dispatch:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
       runner-label:
         description: 'Type label of runner'
         required: true
@@ -61,7 +51,6 @@ on:
 jobs:
   build-oci-bootc-image:
     runs-on:
-      group: ${{ inputs.runner-group }}
       labels:
         - ${{ inputs.runner-label }}
 

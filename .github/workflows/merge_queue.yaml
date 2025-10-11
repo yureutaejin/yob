@@ -55,7 +55,6 @@ jobs:
     uses: ./.github/workflows/_build-oci-container.yaml
     secrets: inherit
     with:
-      runner-group: 'private-runners-yuntae'
       runner-label: 'ytminipc001'
       oci_registry: 'quay.io'
       oci_image_repo: 'teamthepioneers/immutable-os-bootc'

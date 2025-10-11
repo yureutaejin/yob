@@ -4,11 +4,6 @@ run-name: "Convert OCI Container to Disk Image - ${{ github.actor }}"
 on:
   workflow_dispatch:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
       runner-label:
         description: 'Type label of runner'
         required: true
@@ -53,7 +48,6 @@ on:
 jobs:
   convert-to-disk-image:
     runs-on:
-      group: ${{ inputs.runner-group }}
       labels:
         - ${{ inputs.runner-label }}
 
