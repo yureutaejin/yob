@@ -89,6 +89,7 @@ RUN dconf update
 # RUN systemctl disable NetworkManager
 # RUN systemctl disable NetworkManager-wait-online
 RUN systemctl mask bootc-fetch-apply-updates.timer && \
+    systemctl disable firewalld && \
     systemctl enable tailscaled && \
     systemctl enable docker && \
     systemctl enable sshd && \
