@@ -1,6 +1,4 @@
-# Immutable OS - bootc
-
-## Translation
+# YOB : Your own OS using bootc
 
 ## Index
 
@@ -22,7 +20,9 @@ Chunsoo</b></sub></a><br /></td>
 
 ## Introduction
 
-[bootc](https://bootc-dev.github.io/)를 사용하여 Immutable OS를 구축하기 위한 저장소입니다.
+Base project YOB referenced
+
+- [bootc](https://bootc-dev.github.io/)
 
 <img src="https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs" width="500" alt="bootc container">
 

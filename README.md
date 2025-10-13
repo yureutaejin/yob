@@ -1,4 +1,4 @@
-# Immutable OS - bootc
+# YOB : Your own OS using bootc
 
 ## Index
 
@@ -24,7 +24,9 @@ Chunsoo</b></sub></a><br /></td>
 
 ## Introduction
 
-Repository for building Immutable OS using [bootc](https://bootc-dev.github.io/)
+Base project YOB referenced
+
+- [bootc](https://bootc-dev.github.io/)
 
 <img src="https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs" width="500" alt="bootc container">
 

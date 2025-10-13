@@ -1,20 +1,20 @@
 OCI_REGISTRY ?= quay.io
-OCI_IMAGE_REPO ?= teamthepioneers/immutable-os-bootc
+OCI_IMAGE_REPO ?= yuntae/yob
 OCI_IMAGE_TAG ?= latest
 OCI_REGISTRY_USERNAME ?= your_username
 OCI_REGISTRY_PASSWORD ?= your_password
 DISK_FORMAT ?= iso
 DEFAULT_DISK ?= nvme0n1
-DEFAULT_USER_NAME ?= pioneers
-DEFAULT_USER_PASSWD ?= pioneers1234
+DEFAULT_USER_NAME ?= yob
+DEFAULT_USER_PASSWD ?= yob1234
 ROOTFS ?= btrfs
 ARCH ?= amd64
 BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b816ce0c3a605f55389412edab034918f56982e7893e0b08532
 GIT_COMMIT_HASH ?= $(shell git rev-parse HEAD)
 AWS_ACCESS_KEY_ID ?= your_aws_access_key_id
 AWS_SECRET_ACCESS_KEY ?= your_aws_secret_access_key
-AWS_AMI_NAME ?= immutable-os-bootc-$(GIT_COMMIT_HASH:0:8)
-AWS_S3_BUCKET ?= immutable-os-bootc
+AWS_AMI_NAME ?= yob-$(GIT_COMMIT_HASH:0:8)
+AWS_S3_BUCKET ?= yob
 AWS_REGION ?= us-east-1
 
 .PHONY: build-oci-bootc-image

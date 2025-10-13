@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/_build-oci-container.yaml
     secrets: inherit
     with:
-      runner-label: 'ytminipc001'
+      runner-label: 'bootc-builder'
       oci_registry: 'quay.io'
-      oci_image_repo: 'teamthepioneers/immutable-os-bootc'
+      oci_image_repo: 'yuntae/yob'
       oci_image_tag: 'merge-queue-${{ github.event_name }}'
