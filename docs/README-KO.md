@@ -46,22 +46,22 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
 ```mermaid
   sequenceDiagram
     autonumber
-    participant container_builder as Container Builder
-    participant disk_converter as Disk Converter
+    participant build_bootc as Build bootc
+    participant convert_disk as Convert to Disk
     participant oci_registry as OCI Registry
     participant disk_storage as Disk Storage
     participant git_repo as Git Repository
     participant production as Production Env
-    
-    container_builder ->> git_repo: Checkout source
-    container_builder ->> oci_registry: Pull base container
-    container_builder ->> container_builder: Build with Containerfile
-    container_builder ->> oci_registry: Push built container
-    
-    disk_converter ->> oci_registry: Pull container
-    disk_converter ->> disk_converter: Convert container to disk image
-    disk_converter ->> disk_storage: Store disk image
-    
+
+    build_bootc ->> git_repo: Checkout source
+    build_bootc ->> oci_registry: Pull base container
+    build_bootc ->> build_bootc: Build bootc
+    build_bootc ->> oci_registry: Push built bootc
+
+    convert_disk ->> oci_registry: Pull bootc
+    convert_disk ->> convert_disk: Convert bootc to disk format
+    convert_disk ->> disk_storage: Store disk image
+
     production ->> disk_storage: Retrieve disk image
     production ->> production: Deploy disk image
 ```
