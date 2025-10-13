@@ -48,7 +48,7 @@ save-image-as-tar:
 
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
-convert-to-iso:
+convert-to-iso: pull-bootc save-image-as-tar
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
 	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
 	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
@@ -67,7 +67,7 @@ convert-to-iso:
 
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
-convert-to-ami:
+convert-to-ami: pull-bootc save-image-as-tar
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
 	sudo docker run --rm \
 	--privileged \
