@@ -100,8 +100,8 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
 ### 1. OCI 컨테이너 빌드
 
 1. `make login-public-oci-registry`
-2. `make build-oci-bootc-image`
-3. `make push-oci-bootc-image`
+2. `make build-bootc`
+3. `make push-bootc`
 
 ### 2. OCI 컨테이너를 부팅 가능한 디스크 이미지로 변환
 

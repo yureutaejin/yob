@@ -49,7 +49,7 @@ on:
         type: string
 
 jobs:
-  build-oci-bootc-image:
+  build-bootc:
     runs-on:
       labels:
         - ${{ inputs.runner-label }}
@@ -71,10 +71,10 @@ jobs:
           OCI_REGISTRY_USERNAME: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
           OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
 
-      - name: Build OCI image
+      - name: Build bootc
         run: |
-          echo "::group::Build OCI image:"
-          make build-oci-bootc-image
+          echo "::group::Build bootc:"
+          make build-bootc
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
@@ -82,11 +82,11 @@ jobs:
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
           GIT_COMMIT_HASH: ${{ github.sha }}
 
-      - name: Push OCI image to registry
+      - name: Push bootc image to registry
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "::group::Push OCI image to registry:"
-          make push-oci-image 
+          echo "::group::Push bootc image to registry:"
+          make push-bootc
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}

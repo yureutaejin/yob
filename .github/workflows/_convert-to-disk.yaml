@@ -81,7 +81,7 @@ jobs:
       - name: Pull OCI image
         run: |
           echo "::group::Pull OCI image:"
-          make pull-oci-image
+          make pull-bootc
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}

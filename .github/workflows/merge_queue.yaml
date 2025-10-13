@@ -49,10 +49,10 @@ jobs:
               body: commentBody
             });
 
-  build-oci:
+  build-bootc:
     needs: lint-dockerfile
     if: ${{ github.event.pull_request.draft == false }}
-    uses: ./.github/workflows/_build-oci-container.yaml
+    uses: ./.github/workflows/_build-bootc.yaml
     secrets: inherit
     with:
       runner-label: 'bootc-builder'

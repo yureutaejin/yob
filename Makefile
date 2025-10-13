@@ -17,12 +17,20 @@ AWS_AMI_NAME ?= yob-$(GIT_COMMIT_HASH:0:8)
 AWS_S3_BUCKET ?= yob
 AWS_REGION ?= us-east-1
 
-.PHONY: build-oci-bootc-image
-build-oci-bootc-image:
+.PHONY: build-bootc
+build-bootc:
 	docker build \
 	--build-arg GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 	-t ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
 	.
+
+.PHONY: push-bootc
+push-bootc:
+	docker push ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
+
+.PHONY: pull-bootc
+pull-bootc:
+	docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
 
 .PHONY: lint-dockerfile
 lint-dockerfile:
@@ -37,14 +45,6 @@ login-public-oci-registry:
 .PHONY: save-image-as-tar
 save-image-as-tar:
 	docker save -o image-${GIT_COMMIT_HASH:0:8}.tar ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
-
-.PHONY: push-oci-image
-push-oci-image:
-	docker push ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
-
-.PHONY: pull-oci-image
-pull-oci-image:
-	docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
 
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso

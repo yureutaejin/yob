@@ -104,8 +104,8 @@ This section targets that machine to deploy OS is Bare Metal (Laptop, Desktop, e
 ### 1. Build OCI Container
 
 1. `make login-public-oci-registry`
-2. `make build-oci-bootc-image`
-3. `make push-oci-bootc-image`
+2. `make build-bootc`
+3. `make push-bootc`
 
 ### 2. Convert OCI Container to Bootable Disk Image
 
