@@ -69,12 +69,16 @@ convert-to-iso: pull-bootc save-image-as-tar
 .PHONY: convert-to-ami
 convert-to-ami: pull-bootc save-image-as-tar
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
+	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" image_config.toml
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" image_config.toml
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" image_config.toml
 	sudo docker run --rm \
 	--privileged \
 	--security-opt label=type:unconfined_t \
 	-v /var/lib/containers/storage:/var/lib/containers/storage \
 	--env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 	--env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+	-v ./image_config.toml:/config.toml:ro \
 	${BIB_CONTAINER} \
 	--type ${DISK_FORMAT} \
 	--rootfs ${ROOTFS} \

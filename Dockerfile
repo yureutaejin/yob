@@ -51,10 +51,6 @@ FROM step-scratch AS step-final
 ## See also https://fedoraproject.org/wiki/Changes/UnprivilegedUpdatesAtomicDesktops
 RUN dnf install -y \
     @core \
-    @gnome-desktop \
-    @firefox \
-    @fonts \
-    @guest-desktop-agents \
     docker-ce \
     docker-ce-cli \
     containerd.io \
@@ -68,7 +64,6 @@ RUN dnf install -y \
     bash-completion \
     code \
     rsync \
-    fedora-release-ostree-desktop \
     && dnf clean all && \
     rm -rf /var/cache/libdnf5
 
@@ -81,20 +76,16 @@ RUN cp -a /tmp/filesystem/. / && \
     cp -a /tmp/external/. /usr/bin/ && \
     rm -rf /tmp/*
 
-RUN dconf update
-
 # systemd settings
 # RUN systemctl enable systemd-networkd
 # RUN systemctl enable netplan-apply.service
 # RUN systemctl disable NetworkManager
 # RUN systemctl disable NetworkManager-wait-online
 RUN systemctl mask bootc-fetch-apply-updates.timer && \
-    systemctl disable firewalld && \
+    systemctl mask firewalld && \
     systemctl enable tailscaled && \
     systemctl enable docker && \
-    systemctl enable sshd && \
-    systemctl set-default graphical.target
-
+    systemctl enable sshd
 # static analysis checks
 RUN bootc container lint
 
