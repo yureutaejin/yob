@@ -69,7 +69,6 @@ convert-to-iso: pull-bootc save-image-as-tar
 .PHONY: convert-to-ami
 convert-to-ami: pull-bootc save-image-as-tar
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
-	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" image_config.toml
 	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" image_config.toml
 	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" image_config.toml
 	sudo docker run --rm \
