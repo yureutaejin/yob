@@ -1,31 +1,13 @@
 ARG DEFAULT_BASE="quay.io/fedora/fedora-bootc:42"
 
-FROM ${DEFAULT_BASE} AS step-scratch
+FROM ${DEFAULT_BASE} AS step-external
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ADD https://download.docker.com/linux/fedora/docker-ce.repo /etc/yum.repos.d/docker-ce.repo
-
-# See https://docs.fedoraproject.org/en-US/bootc/home-directories
-RUN mkdir -p /var/roothome
-
-RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
-    && printf "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
-    | tee /etc/yum.repos.d/vscode.repo > /dev/null
-
-# Add RPM Fusion repositories
-## Refer to https://rpmfusion.org/
 RUN dnf install -y \
-	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm \
-	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-"$(rpm -E %fedora)".noarch.rpm
-    
-RUN dnf install -y unzip && \
+      unzip && \
     dnf clean all && \
     rm -rf /var/cache/libdnf5
-
-FROM step-scratch AS step-external
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install packages from source OCI image
 # e.g. COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /usr/bin/
@@ -45,35 +27,42 @@ RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/
 
 COPY ./filesystem /tmp/filesystem
 
-FROM step-scratch AS step-final
+FROM ${DEFAULT_BASE} AS step-base
 
-# dnf package installation
+# See https://docs.fedoraproject.org/en-US/bootc/home-directories
+RUN mkdir -p /var/roothome
+
+RUN curl -fsSL https://download.docker.com/linux/fedora/docker-ce.repo > /etc/yum.repos.d/docker-ce.repo
+RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc \
+    && printf "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
+    > /etc/yum.repos.d/vscode.repo
+
+# Add RPM Fusion repositories (https://rpmfusion.org/)
+RUN dnf install -y \
+	  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-"$(rpm -E %fedora)".noarch.rpm \
+	  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-"$(rpm -E %fedora)".noarch.rpm
+
 ## See also https://fedoraproject.org/wiki/Changes/UnprivilegedUpdatesAtomicDesktops
 RUN dnf install -y \
     @core \
-    @gnome-desktop \
-    @firefox \
-    @fonts \
-    @guest-desktop-agents \
     docker-ce \
     docker-ce-cli \
     containerd.io \
     docker-buildx-plugin \
     docker-compose-plugin \
-    tailscale \
-    systemd-networkd \
-    netplan.io \
-    vim \
-    wireshark \
     bash-completion \
     code \
-    rsync \
     fedora-release-ostree-desktop \
+    netplan.io \
+    rsync \
+    tailscale \
+    unzip \
+    vim \
+    wireshark \
     && dnf clean all && \
     rm -rf /var/cache/libdnf5
 
 COPY --from=step-external /tmp /tmp
-
 RUN /tmp/external/aws/install && rm -rf /tmp/external/aws
 
 # sync {filesystem,external}
@@ -81,19 +70,17 @@ RUN cp -a /tmp/filesystem/. / && \
     cp -a /tmp/external/. /usr/bin/ && \
     rm -rf /tmp/*
 
-RUN dconf update
-
 # systemd settings
-# RUN systemctl enable systemd-networkd
-# RUN systemctl enable netplan-apply.service
 # RUN systemctl disable NetworkManager
 # RUN systemctl disable NetworkManager-wait-online
 RUN systemctl mask bootc-fetch-apply-updates.timer && \
-    systemctl disable firewalld && \
+    systemctl mask firewalld && \
     systemctl enable tailscaled && \
     systemctl enable docker && \
     systemctl enable sshd && \
     systemctl set-default graphical.target
+
+FROM step-base AS step-core
 
 # static analysis checks
 RUN bootc container lint
@@ -104,7 +91,30 @@ LABEL containers.bootc=1
 ARG GIT_COMMIT_HASH
 LABEL org.opencontainers.image.source="https://github.com/yureutaejin/yob"
 LABEL org.opencontainers.image.url="https://github.com/yureutaejin/yob"
-LABEL org.opencontainers.image.title="yob"
-LABEL org.opencontainers.image.description="YOB image based on bootc project made by yureutaejin"
+LABEL org.opencontainers.image.title="yob-core"
+LABEL org.opencontainers.image.description="YOB Core image based on bootc project made by yureutaejin"
+LABEL org.opencontainers.image.authors="github: yureutaejin, linktree: https://linktr.ee/yureutaejin"
+LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
+
+FROM step-base AS step-desktop
+
+RUN dnf install -y \
+    @gnome-desktop \
+    @firefox \
+    @fonts \
+    @guest-desktop-agents \
+    && dnf clean all && \
+    rm -rf /var/cache/libdnf5
+
+RUN dconf update
+
+RUN bootc container lint
+
+LABEL containers.bootc=1
+ARG GIT_COMMIT_HASH
+LABEL org.opencontainers.image.source="https://github.com/yureutaejin/yob"
+LABEL org.opencontainers.image.url="https://github.com/yureutaejin/yob"
+LABEL org.opencontainers.image.title="yob-gnome"
+LABEL org.opencontainers.image.description="YOB GNOME image based on bootc project made by yureutaejin"
 LABEL org.opencontainers.image.authors="github: yureutaejin, linktree: https://linktr.ee/yureutaejin"
 LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
