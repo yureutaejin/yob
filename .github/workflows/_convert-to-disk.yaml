@@ -24,6 +24,11 @@ on:
         required: true
         default: 'latest'
         type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
+        type: string
       default_disk:
         description: 'Type disk name you want to use as rootfs (e.g `sda`, `nvme0n1`)'
         required: true
@@ -78,24 +83,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Pull OCI image
-        run: |
-          echo "::group::Pull OCI image:"
-          make pull-bootc
-          echo "::endgroup::"
-        env:
-          OCI_REGISTRY: ${{ inputs.oci_registry }}
-          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
-          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
-
-      - name: Save image as tar
-        run: |
-          make save-image-as-tar
-        env:
-          OCI_REGISTRY: ${{ inputs.oci_registry }}
-          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
-          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
-
       - name: Convert OCI image into specified disk format
         run: |
           echo "::group::Convert OCI image into specified disk format:"
@@ -105,11 +92,16 @@ jobs:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
           DISK_FORMAT: ${{ inputs.disk_format }}
           DEFAULT_DISK: ${{ inputs.default_disk }}
           DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
           DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
           ROOTFS: ${{ inputs.rootfs }}
+          AWS_S3_BUCKET: ${{ inputs.aws_s3_bucket }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Save iso format image
         if: ${{ inputs.disk_format == 'iso' }}

@@ -59,3 +59,5 @@ jobs:
       oci_registry: 'quay.io'
       oci_image_repo: 'yuntae/yob'
       oci_image_tag: 'merge-queue-${{ github.event_name }}'
+      target-interface: 'core'
+

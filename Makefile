@@ -14,7 +14,7 @@ BIB_CONTAINER ?= quay.io/centos-bootc/bootc-image-builder@sha256:ba8c4bee758b4b8
 GIT_COMMIT_HASH ?= $(shell git rev-parse HEAD)
 AWS_ACCESS_KEY_ID ?= your_aws_access_key_id
 AWS_SECRET_ACCESS_KEY ?= your_aws_secret_access_key
-AWS_AMI_NAME ?= yob-$(GIT_COMMIT_HASH:0:8)
+AWS_AMI_NAME ?= yob-core-$(GIT_COMMIT_HASH:0:8)
 AWS_S3_BUCKET ?= yob
 AWS_REGION ?= us-east-1
 
@@ -52,7 +52,10 @@ login-public-oci-registry:
 
 .PHONY: save-image-as-tar
 save-image-as-tar:
-	docker save -o image-${GIT_COMMIT_HASH:0:8}.tar ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
+	[[ "${TARGET_INTERFACE}" == "all" ]] && CONVERT_TARGET="core desktop" || CONVERT_TARGET="${TARGET_INTERFACE}"
+	for target in ${CONVERT_TARGET}; do \
+		docker save -o image-${GIT_COMMIT_HASH:0:8}-${target}.tar ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-${target}; \
+	done
 
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
@@ -80,7 +83,8 @@ convert-to-iso: pull-bootc save-image-as-tar
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
 convert-to-ami: pull-bootc save-image-as-tar
-	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
+	TARGET_INTERFACE=core
+	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}-${TARGET_INTERFACE}.tar
 	cp -rf template-ami.toml config.toml
 	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
 	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
@@ -97,4 +101,4 @@ convert-to-ami: pull-bootc save-image-as-tar
 	--aws-ami-name ${AWS_AMI_NAME} \
 	--aws-bucket ${AWS_S3_BUCKET} \
 	--aws-region ${AWS_REGION} \
-	${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
+	${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-${TARGET_INTERFACE}

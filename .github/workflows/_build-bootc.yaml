@@ -24,6 +24,11 @@ on:
         required: true
         default: 'latest'
         type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
+        type: string
   
   workflow_dispatch:
     inputs:
@@ -46,6 +51,11 @@ on:
         description: 'Type the image tag you want to use'
         required: true
         default: 'latest'
+        type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
         type: string
 
 jobs:
@@ -81,6 +91,7 @@ jobs:
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
           GIT_COMMIT_HASH: ${{ github.sha }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
 
       - name: Push bootc image to registry
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -92,3 +103,4 @@ jobs:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
