@@ -1,6 +1,7 @@
 OCI_REGISTRY ?= quay.io
 OCI_IMAGE_REPO ?= yuntae/yob
 OCI_IMAGE_TAG ?= latest
+TARGET_INTERFACE ?= core
 OCI_REGISTRY_USERNAME ?= your_username
 OCI_REGISTRY_PASSWORD ?= your_password
 DISK_FORMAT ?= iso
@@ -19,18 +20,25 @@ AWS_REGION ?= us-east-1
 
 .PHONY: build-bootc
 build-bootc:
-	docker build \
-	--build-arg GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
-	-t ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
-	.
+	docker buildx bake ${TARGET_INTERFACE} \
+		--set oci_registry=${OCI_REGISTRY} \
+		--set oci_image_repo=${OCI_IMAGE_REPO} \
+		--set oci_image_tag=${OCI_IMAGE_TAG} \
+		--set git_commit_hash=${GIT_COMMIT_HASH} \
 
 .PHONY: push-bootc
 push-bootc:
-	docker push ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
+	[[ "${TARGET_INTERFACE}" == "all" ]] && PUSH_TARGET="core desktop" || PUSH_TARGET="${TARGET_INTERFACE}"
+	for target in ${PUSH_TARGET}; do \
+		docker push ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-${target}; \
+	done
 
 .PHONY: pull-bootc
 pull-bootc:
-	docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
+	[[ "${TARGET_INTERFACE}" == "all" ]] && PULL_TARGET="core desktop" || PULL_TARGET="${TARGET_INTERFACE}"
+	for target in ${PULL_TARGET}; do \
+		docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-${target}; \
+	done
 
 .PHONY: lint-dockerfile
 lint-dockerfile:
@@ -49,30 +57,38 @@ save-image-as-tar:
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
 convert-to-iso: pull-bootc save-image-as-tar
-	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
-	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
-	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
-	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
-	sudo docker run --rm \
-	--privileged \
-	--security-opt label=type:unconfined_t \
-	-v ./image-builder-output:/output \
-	-v /var/lib/containers/storage:/var/lib/containers/storage \
-	-v ./config.toml:/config.toml:ro \
-	${BIB_CONTAINER} \
-	--type ${DISK_FORMAT} \
-	--use-librepo=True \
-	--rootfs ${ROOTFS} \
-	${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}
+	[[ "${TARGET_INTERFACE}" == "all" ]] && CONVERT_TARGET="core desktop" || CONVERT_TARGET="${TARGET_INTERFACE}"
+		for target in ${CONVERT_TARGET}; do \
+		sudo podman load -i image-${GIT_COMMIT_HASH:0:8}-${target}.tar
+		cp -rf template-iso.toml config.toml
+		sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
+		sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
+		sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
+		sudo docker run --rm \
+		--privileged \
+		--security-opt label=type:unconfined_t \
+		-v ./image-builder-output/${target}:/output \
+		-v /var/lib/containers/storage:/var/lib/containers/storage \
+		-v ./config.toml:/config.toml:ro \
+		${BIB_CONTAINER} \
+		--type ${DISK_FORMAT} \
+		--use-librepo=True \
+		--rootfs ${ROOTFS} \
+		${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-${target}; \
+	done
 
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
 convert-to-ami: pull-bootc save-image-as-tar
 	sudo podman load -i image-${GIT_COMMIT_HASH:0:8}.tar
+	cp -rf template-ami.toml config.toml
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
 	sudo docker run --rm \
 	--privileged \
 	--security-opt label=type:unconfined_t \
 	-v /var/lib/containers/storage:/var/lib/containers/storage \
+	-v ./config.toml:/config.toml:ro \
 	--env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 	--env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 	${BIB_CONTAINER} \
