@@ -1,6 +1,6 @@
 ARG DEFAULT_BASE="quay.io/fedora/fedora-bootc:42"
 
-FROM ${DEFAULT_BASE} AS step-external
+FROM ${DEFAULT_BASE} AS downloader
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -27,7 +27,7 @@ RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/
 
 COPY ./filesystem /tmp/filesystem
 
-FROM ${DEFAULT_BASE} AS step-base
+FROM ${DEFAULT_BASE} AS base
 
 # See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
@@ -62,7 +62,7 @@ RUN dnf install -y \
     && dnf clean all && \
     rm -rf /var/cache/libdnf5
 
-COPY --from=step-external /tmp /tmp
+COPY --from=downloader /tmp /tmp
 RUN /tmp/external/aws/install && rm -rf /tmp/external/aws
 
 # sync {filesystem,external}
@@ -80,7 +80,7 @@ RUN systemctl mask bootc-fetch-apply-updates.timer && \
     systemctl enable sshd && \
     systemctl set-default graphical.target
 
-FROM step-base AS step-core
+FROM base AS core
 
 # static analysis checks
 RUN bootc container lint
@@ -96,7 +96,7 @@ LABEL org.opencontainers.image.description="YOB Core image based on bootc projec
 LABEL org.opencontainers.image.authors="github: yureutaejin, linktree: https://linktr.ee/yureutaejin"
 LABEL org.opencontainers.image.revision=${GIT_COMMIT_HASH}
 
-FROM step-base AS step-desktop
+FROM base AS desktop
 
 RUN dnf install -y \
     @gnome-desktop \

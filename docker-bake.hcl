@@ -1,34 +1,36 @@
-variable "oci_registry" {
-  default = "quay.io"
+variable "OCI_REGISTRY" {
+  default = "registry_name"
 }
 
-variable "oci_image_repo" {
-  default = "yuntae/yob"
+variable "OCI_IMAGE_REPO" {
+  default = "namespace/repo"
 }
 
-variable "oci_image_tag" {
+variable "OCI_IMAGE_TAG" {
   default = "latest"
 }
 
-variable "git_commit_hash" {
+variable "GIT_COMMIT_HASH" {
   default = "sha-unknown"
 }
 
 target "core" {
   dockerfile = "Dockerfile"
   context    = "."
-  tags = ["${oci_registry}/${oci_image_repo}:${oci_image_tag}-core"]
+  target = "core"
+  tags = ["${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-core"]
   args = {
-    GIT_COMMIT_HASH = "${git_commit_hash}"
+    GIT_COMMIT_HASH = "${GIT_COMMIT_HASH}"
   }
 }
 
 target "desktop" {
   dockerfile = "Dockerfile"
   context    = "."
-  tags = ["${oci_registry}/${oci_image_repo}:${oci_image_tag}-desktop"]
+  target = "desktop"
+  tags = ["${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-desktop"]
   args = {
-    GIT_COMMIT_HASH = "${git_commit_hash}"
+    GIT_COMMIT_HASH = "${GIT_COMMIT_HASH}"
   }
 }
 

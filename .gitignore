@@ -1,2 +1,5 @@
 **/.DS_Store
 dockerfile-lint.json
+*.tar
+config.toml
+image-builder-output/*

@@ -107,18 +107,11 @@ jobs:
         if: ${{ inputs.disk_format == 'iso' }}
         run: |
           sudo chown -R $USER:$USER ./image-builder-output
-          IMAGE_DIGEST=$(docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \
-            jq -r .[0].Digest | cut -d ':' -f2)
-          [ -z "${IMAGE_DIGEST}" ] || [ "${IMAGE_DIGEST}" == "null" ] && \
-          IMAGE_DIGEST=$(
-            docker buildx imagetools inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
-            --format '{{ json .Manifest}}' | \
-            jq -r .digest | cut -d ':' -f2)
-          sudo mkdir -p /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}
-          sudo mv image-builder-output /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}/${DISK_FORMAT}
+          sudo mkdir -p /opt/bootc-os-disk-images/${{ github.run_number }}
+          sudo mv image-builder-output /opt/bootc-os-disk-images/${{ github.run_number }}
           sudo rm -rf ./image-builder-output
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
-          DISK_FORMAT: ${{ inputs.disk_format }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}

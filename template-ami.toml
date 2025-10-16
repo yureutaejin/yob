@@ -1,4 +1,4 @@
 [[customizations.user]]
-name = {DEFAULT_USER_NAME}
-password = {DEFAULT_USER_PASSWD}
+name = "{DEFAULT_USER_NAME}"
+password = "{DEFAULT_USER_PASSWD}"
 groups = ["wheel"]
