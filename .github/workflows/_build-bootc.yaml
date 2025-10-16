@@ -4,15 +4,10 @@ run-name: "Build OCI container - ${{ github.actor }}"
 on:
   workflow_call:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
       runner-label:
         description: 'Type label of runner'
         required: true
-        default: 'ytminipc001'
+        default: 'bootc-builder'
         type: string
       oci_registry:
         description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
@@ -22,25 +17,25 @@ on:
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
-        default: 'teamthepioneers/immutable-os-bootc'
+        default: 'yuntae/yob'
         type: string
       oci_image_tag:
         description: 'Type the image tag you want to use'
         required: true
         default: 'latest'
+        type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
         type: string
   
   workflow_dispatch:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
       runner-label:
         description: 'Type label of runner'
         required: true
-        default: 'ytminipc001'
+        default: 'bootc-builder'
         type: string
       oci_registry:
         description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
@@ -50,18 +45,22 @@ on:
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
-        default: 'teamthepioneers/immutable-os-bootc'
+        default: 'yuntae/yob'
         type: string
       oci_image_tag:
         description: 'Type the image tag you want to use'
         required: true
         default: 'latest'
         type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
+        type: string
 
 jobs:
-  build-oci-bootc-image:
+  build-bootc:
     runs-on:
-      group: ${{ inputs.runner-group }}
       labels:
         - ${{ inputs.runner-label }}
 
@@ -82,23 +81,26 @@ jobs:
           OCI_REGISTRY_USERNAME: ${{ secrets.OCI_REGISTRY_BOT_USERNAME }}
           OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
 
-      - name: Build OCI image
+      - name: Build bootc
         run: |
-          echo "::group::Build OCI image:"
-          make build-oci-bootc-image
+          echo "::group::Build bootc:"
+          make build-bootc
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
           GIT_COMMIT_HASH: ${{ github.sha }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
 
-      - name: Push OCI image to registry
+      - name: Push bootc image to registry
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "::group::Push OCI image to registry:"
-          make push-oci-image 
+          echo "::group::Push bootc image to registry:"
+          make push-bootc
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}

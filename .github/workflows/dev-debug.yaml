@@ -2,18 +2,11 @@ name: "Workflow for Development & Debugging"
 run-name: "Dev & Debug Workflow - ${{ github.ref }}"
 
 on:
-  workflow_dispatch:
-    inputs:
-      runner-group:
-        description: 'Select the runner group'
-        required: true
-        default: 'Default'
-        type: string
+  workflow_dispatch: {}
 
 jobs:
   test:
-    runs-on:
-      group: ${{ inputs.runner-group }}
+    runs-on: ubuntu-latest
     steps:
       - name: template
         run: |

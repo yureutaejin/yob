@@ -4,15 +4,10 @@ run-name: "Convert OCI Container to Disk Image - ${{ github.actor }}"
 on:
   workflow_dispatch:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
       runner-label:
         description: 'Type label of runner'
         required: true
-        default: 'ytminipc001'
+        default: 'bootc-builder'
         type: string
       oci_registry:
         description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
@@ -22,12 +17,17 @@ on:
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
-        default: 'teamthepioneers/immutable-os-bootc'
+        default: 'yuntae/yob'
         type: string
       oci_image_tag:
         description: 'Type the image tag you want to use'
         required: true
         default: 'latest'
+        type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
         type: string
       default_disk:
         description: 'Type disk name you want to use as rootfs (e.g `sda`, `nvme0n1`)'
@@ -35,20 +35,24 @@ on:
         default: 'sda'
         type: string
       disk_format:
-        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`)'
+        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`, `ami`)'
         required: true
         default: 'iso'
         type: string
       rootfs:
         description: 'Type the root filesystem you want to use (e.g. `ext4`, `xfs`, `btrfs`)'
-        required: false
+        required: true
         default: 'btrfs'
+        type: string
+      aws_s3_bucket:
+        description: '(Only for `ami` disk format) Type the AWS S3 bucket name you want to use'
+        required: false
+        default: 'none'
         type: string
 
 jobs:
   convert-to-disk-image:
     runs-on:
-      group: ${{ inputs.runner-group }}
       labels:
         - ${{ inputs.runner-label }}
 
@@ -71,40 +75,36 @@ jobs:
           OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
           OCI_REGISTRY: ${{ inputs.oci_registry }}
 
-      - name: Pull OCI image
-        run: |
-          echo "::group::Pull OCI image:"
-          make pull-oci-image
-          echo "::endgroup::"
-        env:
-          OCI_REGISTRY: ${{ inputs.oci_registry }}
-          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
-          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
-
-      - name: Save image as tar
-        run: |
-          make save-image-as-tar
-        env:
-          OCI_REGISTRY: ${{ inputs.oci_registry }}
-          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
-          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+      - name: Configure AWS credentials
+        if: ${{ inputs.disk_format == 'ami' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Convert OCI image into specified disk format
         run: |
           echo "::group::Convert OCI image into specified disk format:"
-          make convert-to-disk-image
+          make convert-to-${DISK_FORMAT}
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
           DISK_FORMAT: ${{ inputs.disk_format }}
           DEFAULT_DISK: ${{ inputs.default_disk }}
           DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
           DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
           ROOTFS: ${{ inputs.rootfs }}
+          AWS_S3_BUCKET: ${{ inputs.aws_s3_bucket }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Save disk format image
+      - name: Save iso format image
+        if: ${{ inputs.disk_format == 'iso' }}
         run: |
           sudo chown -R $USER:$USER ./image-builder-output
           IMAGE_DIGEST=$(docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \

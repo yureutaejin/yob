@@ -1,6 +1,4 @@
-# Immutable OS - bootc
-
-## Translation
+# YOB : Your own OS using bootc
 
 ## Index
 
@@ -22,7 +20,9 @@ Chunsoo</b></sub></a><br /></td>
 
 ## Introduction
 
-[bootc](https://bootc-dev.github.io/)를 사용하여 Immutable OS를 구축하기 위한 저장소입니다.
+Base project YOB referenced
+
+- [bootc](https://bootc-dev.github.io/)
 
 <img src="https://developers.redhat.com/sites/default/files/styles/article_floated/public/image1_62.png.webp?itok=c0vYglLs" width="500" alt="bootc container">
 
@@ -46,22 +46,22 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
 ```mermaid
   sequenceDiagram
     autonumber
-    participant container_builder as Container Builder
-    participant disk_converter as Disk Converter
+    participant build_bootc as Build bootc
+    participant convert_disk as Convert to Disk
     participant oci_registry as OCI Registry
     participant disk_storage as Disk Storage
     participant git_repo as Git Repository
     participant production as Production Env
-    
-    container_builder ->> git_repo: Checkout source
-    container_builder ->> oci_registry: Pull base container
-    container_builder ->> container_builder: Build with Containerfile
-    container_builder ->> oci_registry: Push built container
-    
-    disk_converter ->> oci_registry: Pull container
-    disk_converter ->> disk_converter: Convert container to disk image
-    disk_converter ->> disk_storage: Store disk image
-    
+
+    build_bootc ->> git_repo: Checkout source
+    build_bootc ->> oci_registry: Pull base container
+    build_bootc ->> build_bootc: Build bootc
+    build_bootc ->> oci_registry: Push built bootc
+
+    convert_disk ->> oci_registry: Pull bootc
+    convert_disk ->> convert_disk: Convert bootc to disk format
+    convert_disk ->> disk_storage: Store disk image
+
     production ->> disk_storage: Retrieve disk image
     production ->> production: Deploy disk image
 ```
@@ -100,8 +100,8 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
 ### 1. OCI 컨테이너 빌드
 
 1. `make login-public-oci-registry`
-2. `make build-oci-bootc-image`
-3. `make push-oci-bootc-image`
+2. `make build-bootc`
+3. `make push-bootc`
 
 ### 2. OCI 컨테이너를 부팅 가능한 디스크 이미지로 변환
 
