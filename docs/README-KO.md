@@ -6,7 +6,7 @@
 - [Contributors](#contributors)
 - [Introduction](#introduction)
 - [Overall pipeline workflows](#overall-pipeline-workflows)
-- [Quick Start](#quick-start-for-local-hands-on)
+- [Quick Start](#quick-start)
 
 ## Contributors
 
@@ -41,74 +41,39 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
 
 ## Overall pipeline workflows
 
-현재 이 프로젝트는 아래 다이어그램과 같이 구성되어 있습니다.
+현재 이 프로젝트는 RHEL 이미지 모드 파이프라인 다이어그램을 참조합니다.
 
-```mermaid
-  sequenceDiagram
-    autonumber
-    participant build_bootc as Build bootc
-    participant convert_disk as Convert to Disk
-    participant oci_registry as OCI Registry
-    participant disk_storage as Disk Storage
-    participant git_repo as Git Repository
-    participant production as Production Env
+- [what-image-mode-means-users-rhel-edge](https://www.redhat.com/en/blog/what-image-mode-means-users-rhel-edge)
 
-    build_bootc ->> git_repo: Checkout source
-    build_bootc ->> oci_registry: Pull base container
-    build_bootc ->> build_bootc: Build bootc
-    build_bootc ->> oci_registry: Push built bootc
+![Image mode pipeline for RHEL](https://www.redhat.com/rhdc/managed-files/image2_132.png)
 
-    convert_disk ->> oci_registry: Pull bootc
-    convert_disk ->> convert_disk: Convert bootc to disk format
-    convert_disk ->> disk_storage: Store disk image
-
-    production ->> disk_storage: Retrieve disk image
-    production ->> production: Deploy disk image
-```
-
-## Quick Start (for local hands-on)
+## Quick Start
 
 구성을 거의 편집하지 않고 빠르게 시작하는 방법입니다.
-이 섹션은 OS를 배포할 머신이 베어 메탈(노트북, 데스크톱 등)인 경우를 대상으로 합니다.
 
 ### 사전 요구사항
 
-- OS
-  - Linux (RHEL 계열 권장)
-- Podman
-  - BIB(bootc-image-builder)는 podman, buildah, skopeo가 사용하는 호스트 OS의 `/var/lib/containers/storage`를 사용합니다.
-  - `[[ -d /var/lib/containers/storage ]] || echo "Please install podman/buildah and pull any container first"`
 - Docker
-  - `curl -fsSL https://get.docker.com | sh`
 - Make
-  - 정의된 [작업](./Makefile)에 `make` 명령을 사용하기 위해
+- Podman
+  - `/var/lib/containers/storage`만 사용합니다. 본 프로젝트에서는 podman 명령어를 사용하지 않습니다.
 - OCI Registry
-  - OCI Registry 계정을 취득하세요 (예: DockerHub, Quay.io 등)
-  - 현재 Private Registry는 지원되지 않습니다 (곧 가이드라인을 업데이트할 예정)
-- Makefile을 수정하지 않고 호스트 쉘에서 로컬 변수를 정의하기만 하면 됩니다 ([Makefile](./Makefile)의 기본값 참조)
-  - OCI_REGISTRY
-  - OCI_IMAGE_REPO
-  - OCI_IMAGE_TAG
-  - OCI_REGISTRY_USERNAME
-  - OCI_REGISTRY_PASSWORD
-  - DEFAULT_DISK (예: nvme0n1, sda...)
-- 생성할 OS를 실행할 머신
-  - Bare Metal (노트북, 데스크톱 등)
-  - Virtual Machine
-  - Cloud
+  - OCI Registry 계정을 취득하세요 (예: Docker Hub, Quay.io 등)
+- 호스트 셸에서 로컬 변수를 정의하기만 하면 됩니다. Makefile을 수정할 필요는 없습니다 (기본값은 [Makefile](./Makefile) 참조).
 
-### 1. OCI 컨테이너 빌드
+### 1. Build bootc
 
-1. `make login-public-oci-registry`
-2. `make build-bootc`
-3. `make push-bootc`
+bootc 프로젝트 기반 OCI 컨테이너를 빌드하고 이를 OCI Registry에 푸시합니다.
 
-### 2. OCI 컨테이너를 부팅 가능한 디스크 이미지로 변환
+1. `make build-bootc`
+2. `make push-bootc`
 
-1. `make save-image-as-tar`
-2. `make convert-to-disk-image`
+### 2. (Just for first boot) Convert bootc to disk format
 
-### 3. 부팅 가능한 디스크 만들기
+- `make convert-to-{iso,ami,qcow2}`
+  - 현재는 iso 포맷만 완전히 테스트되었습니다.
+
+### 3. Flash bootable disk
 
 부팅 가능한 디스크를 만드는 방법은 너무 많습니다.
 지금은 베어 메탈 경우만 남겨두겠습니다.
@@ -117,16 +82,17 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
   - [Ventoy](https://www.ventoy.net/en/index.html)
   - [BalenaEtcher](https://etcher.balena.io/)
 
-### 4. OS 부팅
+### 4. Boot OS
 
 생성된 부팅 가능한 디스크로 부팅합니다
 이미 [config.toml](./config.toml)로 호스트 구성을 설정했으므로, 첫 번째 부팅이 완료될 때까지 기다리기만 하면 됩니다.
 
-### 5. OS 롤백/업그레이드/전환
+### 5. (On target machine) Rollback/Upgrade/Switch OS
 
-부팅 가능한 디스크를 다시 만들 필요가 없습니다.
-새 이미지를 OCI Registry에 푸시하면 다음 재부팅 시 사용할 수 있습니다.
-명령을 선택하여 실행 중인 OS에서 실행하고 재부팅하기만 하면 됩니다.
+> [!NOTE]
+> 첫 부팅 이후라면 부팅 가능한 디스크를 다시 만들 필요가 없습니다.
+
+새 이미지를 OCI Registry에 push하기만하면, 다운로드하고 재부팅하는 것으로 OS 전환이 완료됩니다.
 
 - `sudo bootc upgrade`
   - 부팅한 것과 동일한 태그의 최신 푸시된 이미지로 업그레이드
@@ -135,4 +101,4 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
   - 예: `sudo bootc switch quay.io/fedora/fedora-bootc:latest`
 - `sudo bootc rollback`
   - 이전 이미지로 롤백
-  - (중요) OS는 1개의 이전 이미지를 유지합니다
+  - (중요) OS는 단 1개의 이전 버전 이미지만을 유지합니다
