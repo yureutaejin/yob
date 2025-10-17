@@ -4,7 +4,6 @@ OCI_IMAGE_TAG ?= latest
 TARGET_INTERFACE ?= core
 OCI_REGISTRY_USERNAME ?= your_username
 OCI_REGISTRY_PASSWORD ?= your_password
-DISK_FORMAT ?= iso
 DEFAULT_DISK ?= nvme0n1
 DEFAULT_USER_NAME ?= yob
 DEFAULT_USER_PASSWD ?= yob1234
@@ -74,7 +73,7 @@ convert-to-iso: pull-bootc save-image-as-tar
 		-v /var/lib/containers/storage:/var/lib/containers/storage \
 		-v ./config.toml:/config.toml:ro \
 		${BIB_CONTAINER} \
-		--type ${DISK_FORMAT} \
+		--type iso \
 		--use-librepo=True \
 		--rootfs ${ROOTFS} \
 		${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}; \
@@ -96,7 +95,7 @@ convert-to-ami: pull-bootc save-image-as-tar
 	--env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 	--env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 	${BIB_CONTAINER} \
-	--type ${DISK_FORMAT} \
+	--type ami \
 	--rootfs ${ROOTFS} \
 	--aws-ami-name $${AWS_AMI_NAME} \
 	--aws-bucket ${AWS_S3_BUCKET} \
