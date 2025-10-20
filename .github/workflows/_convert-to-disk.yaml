@@ -83,6 +83,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Pull bootc image from OCI registry
+        run: |
+          echo "::group::Pull bootc image from OCI registry:"
+          make pull-bootc
+          echo "::endgroup::"
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
+
+      - name: Save image as tar
+        run: |
+          echo "::group::Save image as tar:"
+          make save-image-as-tar
+          echo "::endgroup::"
+        env:
+          OCI_REGISTRY: ${{ inputs.oci_registry }}
+          OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
+          OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
+
       - name: Convert OCI image into specified disk format
         run: |
           echo "::group::Convert OCI image into specified disk format:"

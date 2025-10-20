@@ -53,15 +53,16 @@ pull-bootc:
 save-image-as-tar:
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
-		docker save -o image-${SHORT_COMMIT_HASH}-$${target}.tar ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}; \
+		docker save ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target} | \
+		pigz >  -o image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
 	done
 
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
-convert-to-iso: pull-bootc save-image-as-tar
+convert-to-iso:
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
-		sudo podman load -i image-${SHORT_COMMIT_HASH}-$${target}.tar; \
+		sudo podman load -i image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
 		cp -rf template-iso.toml config.toml; \
 		sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml; \
 		sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml; \
@@ -81,9 +82,9 @@ convert-to-iso: pull-bootc save-image-as-tar
 
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
-convert-to-ami: pull-bootc save-image-as-tar
+convert-to-ami:
 	AWS_AMI_NAME=${SHORT_COMMIT_HASH}-core; \
-	sudo podman load -i image-${SHORT_COMMIT_HASH}-core.tar; \
+	sudo podman load -i image-${SHORT_COMMIT_HASH}-core.tar.gz; \
 	cp -rf template-ami.toml config.toml; \
 	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml; \
 	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml; \
