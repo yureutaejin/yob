@@ -117,8 +117,6 @@ jobs:
           TARGET_INTERFACE: ${{ inputs.target-interface }}
           DISK_FORMAT: ${{ inputs.disk_format }}
           DEFAULT_DISK: ${{ inputs.default_disk }}
-          DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
-          DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
           ROOTFS: ${{ inputs.rootfs }}
           AWS_S3_BUCKET: ${{ inputs.aws_s3_bucket }}
           AWS_REGION: ${{ vars.AWS_REGION }}

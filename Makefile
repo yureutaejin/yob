@@ -54,7 +54,7 @@ save-image-as-tar:
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
 		docker save ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target} | \
-		pigz >  -o image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
+		pigz > image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
 	done
 
 # See https://github.com/osbuild/bootc-image-builder
