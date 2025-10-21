@@ -60,8 +60,6 @@ jobs:
       - name: Verify prerequisites
         run: |
           make --version &> /dev/null || { echo "Make is not installed"; exit 1; }
-          [[ -d /var/lib/containers/storage ]] || \
-          { echo "no /var/lib/containers/storage found. Please install Podman or Buildah and pull any container"; exit 1; }
           docker --version &> /dev/null || { echo "Docker is not installed"; exit 1; }
 
       - name: Checkout Repository

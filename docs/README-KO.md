@@ -55,8 +55,6 @@ bootc 프로젝트는 이 방법을 역으로 사용하여 Linux 컨테이너 �
 
 - Docker
 - Make
-- Podman
-  - `/var/lib/containers/storage`만 사용합니다. 본 프로젝트에서는 podman 명령어를 사용하지 않습니다.
 - OCI Registry
   - OCI Registry 계정을 취득하세요 (예: Docker Hub, Quay.io 등)
 - 호스트 셸에서 로컬 변수를 정의하기만 하면 됩니다. Makefile을 수정할 필요는 없습니다 (기본값은 [Makefile](./Makefile) 참조).

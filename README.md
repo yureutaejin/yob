@@ -59,8 +59,6 @@ Quick start without editing few configurations.
 
 - Docker
 - Make
-- Podman
-  - It just uses `/var/lib/containers/storage`. No need to use podman command.
 - OCI Registry
   - Get your account of OCI Registry (e.g. Docker Hub, Quay.io, etc.)
 - Just define local variables in host shell without fixing Makefile (Refer to default value in [Makefile](./Makefile))
