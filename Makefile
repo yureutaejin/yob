@@ -54,31 +54,35 @@ save-image-as-tar:
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
 		docker save ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target} | \
-		pigz > image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
+		pigz > container-tarbells/image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
 	done
 
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
-convert-to-iso:
+convert-to-iso: bib-dind-up
+	cp -rf template-iso.toml config.toml; \
+	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml; \
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml; \
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml; \
+	docker cp config.toml bib-dind:/config.toml; \
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
-		sudo podman load -i image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
-		cp -rf template-iso.toml config.toml; \
-		sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml; \
-		sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml; \
-		sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml; \
-		sudo docker run --rm \
-		--privileged \
-		--security-opt label=type:unconfined_t \
-		-v ./image-builder-output/$${target}:/output \
-		-v /var/lib/containers/storage:/var/lib/containers/storage \
-		-v ./config.toml:/config.toml:ro \
-		${BIB_CONTAINER} \
-		--type iso \
-		--use-librepo=True \
-		--rootfs ${ROOTFS} \
-		${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}; \
+		mkdir -p image-builder-output/$${target}; \
+		docker exec bib-dind /bin/bash -c " \
+			podman load -i container-tarbells/image-${SHORT_COMMIT_HASH}-$${target}.tar.gz; \
+			podman run --rm \
+				--privileged \
+				--security-opt label=type:unconfined_t \
+				-v ./image-builder-output/$${target}:/output \
+				-v /var/lib/containers/storage:/var/lib/containers/storage \
+				-v ./config.toml:/config.toml:ro \
+				${BIB_CONTAINER} \
+				--type iso \
+				--use-librepo=True \
+				--rootfs ${ROOTFS} \
+				${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}"; \
 	done
+	$(MAKE) bib-dind-down
 
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
@@ -102,3 +106,17 @@ convert-to-ami:
 	--aws-bucket ${AWS_S3_BUCKET} \
 	--aws-region ${AWS_REGION} \
 	${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-core
+
+.PHONY: bib-dind-up
+bib-dind-up:
+	docker run \
+		-itd \
+		--privileged \
+		--name bib-dind \
+		-v ./container-tarbells:/container-tarbells \
+		-v ./image-builder-output:/image-builder-output \
+	quay.io/containers/podman:latest
+
+.PHONY: bib-dind-down
+bib-dind-down:
+	docker rm -f bib-dind || true
