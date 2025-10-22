@@ -18,7 +18,7 @@
 #
 #    grubby --update-kernel ALL --remove-args selinux
 #
-SELINUX=disabled
+SELINUX=permissive
 # SELINUXTYPE= can take one of these three values:
 #     targeted - Targeted processes are protected,
 #     minimum - Modification of targeted policy. Only selected processes are protected.

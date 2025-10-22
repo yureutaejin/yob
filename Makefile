@@ -49,8 +49,8 @@ pull-bootc:
 		docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}; \
 	done
 
-.PHONY: save-image-as-tar
-save-image-as-tar:
+.PHONY: save-image-as-tgz
+save-image-as-tgz:
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
 		docker save ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target} | \
@@ -60,11 +60,11 @@ save-image-as-tar:
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
 convert-to-iso: bib-dind-up
-	cp -rf template-iso.toml config.toml; \
-	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml; \
-	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml; \
-	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml; \
-	docker cp config.toml bib-dind:/config.toml; \
+	cp -rf template-iso.toml config.toml
+	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
+	docker cp config.toml bib-dind:/config.toml
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
 		mkdir -p image-builder-output/$${target}; \
@@ -87,11 +87,11 @@ convert-to-iso: bib-dind-up
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
 convert-to-ami: bib-dind-up
+	cp -rf template-ami.toml config.toml
+	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
+	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
+	docker cp config.toml bib-dind:/config.toml
 	AWS_AMI_NAME=${SHORT_COMMIT_HASH}-core; \
-	cp -rf template-ami.toml config.toml; \
-	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml; \
-	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml; \
-	docker cp config.toml bib-dind:/config.toml; \
 	docker exec bib-dind /bin/bash -c " \
 		podman load -i container-tarbells/image-${SHORT_COMMIT_HASH}-core.tar.gz; \
 		podman run --rm \
@@ -99,7 +99,6 @@ convert-to-ami: bib-dind-up
 			--security-opt label=type:unconfined_t \
 			-v /var/lib/containers/storage:/var/lib/containers/storage \
 			-v ./config.toml:/config.toml:ro \
-			-v ./filesystem/etc/selinux:/etc/selinux:ro \
 			--env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 			--env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 			${BIB_CONTAINER} \
@@ -108,7 +107,7 @@ convert-to-ami: bib-dind-up
 			--aws-ami-name $${AWS_AMI_NAME} \
 			--aws-bucket ${AWS_S3_BUCKET} \
 			--aws-region ${AWS_REGION} \
-		${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-core"; \
+		${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-core"
 	$(MAKE) bib-dind-down
 
 .PHONY: bib-dind-up

@@ -92,10 +92,10 @@ jobs:
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
           TARGET_INTERFACE: ${{ inputs.target-interface }}
 
-      - name: Save image as tar
+      - name: Save image as tgz
         run: |
-          echo "::group::Save image as tar:"
-          make save-image-as-tar
+          echo "::group::Save image as tgz:"
+          make save-image-as-tgz
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
