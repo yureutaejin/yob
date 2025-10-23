@@ -59,7 +59,7 @@ save-image-as-tgz:
 
 # See https://github.com/osbuild/bootc-image-builder
 .PHONY: convert-to-iso
-convert-to-iso: bib-dind-up
+convert-to-iso: bib-dind-down bib-dind-up
 	cp -rf template-iso.toml config.toml
 	sed -i "s|{DEFAULT_DISK}|${DEFAULT_DISK}|g" config.toml
 	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
@@ -86,7 +86,7 @@ convert-to-iso: bib-dind-up
 
 # See https://github.com/osbuild/bootc-image-builder?tab=readme-ov-file#amazon-machine-images-amis
 .PHONY: convert-to-ami
-convert-to-ami: bib-dind-up
+convert-to-ami: bib-dind-down bib-dind-up
 	cp -rf template-ami.toml config.toml
 	sed -i "s|{DEFAULT_USER_NAME}|${DEFAULT_USER_NAME}|g" config.toml
 	sed -i "s|{DEFAULT_USER_PASSWD}|${DEFAULT_USER_PASSWD}|g" config.toml
