@@ -76,7 +76,7 @@ It will build OCI container based on bootc project and push it to your OCI Regis
   - Pull bootc image from OCI Registry (if you haven't yet)
 - `make save-image-as-tgz`
 - `make convert-to-{iso,ami,qcow2}`
-  - Currently, only iso format is fully tested.
+  - Currently, only iso and ami format is tested.
 
 ### 3. Flash bootable disk
 

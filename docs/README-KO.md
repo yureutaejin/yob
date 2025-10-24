@@ -69,7 +69,7 @@ bootc 프로젝트 기반 OCI 컨테이너를 빌드하고 이를 OCI Registry�
 ### 2. (Just for first boot) Convert bootc to disk format
 
 - `make convert-to-{iso,ami,qcow2}`
-  - 현재는 iso 포맷만 완전히 테스트되었습니다.
+  - 현재는 iso, ami 포맷만 테스트되었습니다.
 
 ### 3. Flash bootable disk
 
