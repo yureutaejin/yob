@@ -93,6 +93,8 @@ jobs:
           echo "::group::Push bootc image to registry:"
           make push-bootc
           echo "::endgroup::"
+          echo "## Image path" | tee -a $GITHUB_STEP_SUMMARY
+          echo "\`${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-${TARGET_INTERFACE}\` (all: It creates both core and desktop)" | tee -a $GITHUB_STEP_SUMMARY
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
