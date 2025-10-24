@@ -4,30 +4,29 @@ run-name: "Convert OCI Container to Disk Image - ${{ github.actor }}"
 on:
   workflow_dispatch:
     inputs:
-      runner-group:
-        description: 'Type the runner group'
-        required: true
-        default: 'private-runners-yuntae'
-        type: string
-      runner-label:
-        description: 'Type label of runner'
-        required: true
-        default: 'ytminipc001'
-        type: string
       oci_registry:
-        description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
+        description: 'Choose the OCI registry you want to use.'
         required: true
+        options:
+          - ghcr.io
+          - quay.io
+          - docker.io
         default: 'quay.io'
-        type: string
+        type: choice
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
-        default: 'teamthepioneers/immutable-os-bootc'
+        default: 'yuntae/yob'
         type: string
       oci_image_tag:
         description: 'Type the image tag you want to use'
         required: true
         default: 'latest'
+        type: string
+      target-interface:
+        description: 'Type the target interface you want to build (e.g. `core`, `desktop`, `all`)'
+        required: true
+        default: 'all'
         type: string
       default_disk:
         description: 'Type disk name you want to use as rootfs (e.g `sda`, `nvme0n1`)'
@@ -35,29 +34,38 @@ on:
         default: 'sda'
         type: string
       disk_format:
-        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`)'
+        description: 'Choose disk format you want to convert the OCI image into'
         required: true
+        options:
+          - iso
+          - ami
         default: 'iso'
-        type: string
+        type: choice
       rootfs:
-        description: 'Type the root filesystem you want to use (e.g. `ext4`, `xfs`, `btrfs`)'
-        required: false
+        description: 'Choose root filesystem you want to use'
+        required: true
+        options:
+          - btrfs
+          - ext4
+          - xfs
         default: 'btrfs'
+        type: choice
+      aws_s3_bucket:
+        description: '(Only for `ami` disk format) Type the AWS S3 bucket name you want to use'
+        required: false
+        default: 'none'
         type: string
 
 jobs:
   convert-to-disk-image:
     runs-on:
-      group: ${{ inputs.runner-group }}
       labels:
-        - ${{ inputs.runner-label }}
+        - bootc-builder
 
     steps:
       - name: Verify prerequisites
         run: |
           make --version &> /dev/null || { echo "Make is not installed"; exit 1; }
-          [[ -d /var/lib/containers/storage ]] || \
-          { echo "no /var/lib/containers/storage found. Please install Podman or Buildah and pull any container"; exit 1; }
           docker --version &> /dev/null || { echo "Docker is not installed"; exit 1; }
 
       - name: Checkout Repository
@@ -71,54 +79,63 @@ jobs:
           OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_BOT_PASSWORD }}
           OCI_REGISTRY: ${{ inputs.oci_registry }}
 
-      - name: Pull OCI image
+      - name: Configure AWS credentials
+        if: ${{ inputs.disk_format == 'ami' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Pull bootc image from OCI registry
         run: |
-          echo "::group::Pull OCI image:"
-          make pull-oci-image
+          echo "::group::Pull bootc image from OCI registry:"
+          make pull-bootc
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
 
-      - name: Save image as tar
+      - name: Save image as tgz
         run: |
-          make save-image-as-tar
+          echo "::group::Save image as tgz:"
+          make save-image-as-tgz
+          echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
 
       - name: Convert OCI image into specified disk format
         run: |
           echo "::group::Convert OCI image into specified disk format:"
-          make convert-to-disk-image
+          make convert-to-${DISK_FORMAT}
           echo "::endgroup::"
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
           DISK_FORMAT: ${{ inputs.disk_format }}
           DEFAULT_DISK: ${{ inputs.default_disk }}
-          DEFAULT_USER_NAME: ${{ secrets.DEFAULT_USER_NAME }}
-          DEFAULT_USER_PASSWD: ${{ secrets.DEFAULT_USER_PASSWD }}
           ROOTFS: ${{ inputs.rootfs }}
+          AWS_S3_BUCKET: ${{ inputs.aws_s3_bucket }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Save disk format image
+      - name: Save iso format image
+        if: ${{ inputs.disk_format == 'iso' }}
         run: |
           sudo chown -R $USER:$USER ./image-builder-output
-          IMAGE_DIGEST=$(docker inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} -f json | \
-            jq -r .[0].Digest | cut -d ':' -f2)
-          [ -z "${IMAGE_DIGEST}" ] || [ "${IMAGE_DIGEST}" == "null" ] && \
-          IMAGE_DIGEST=$(
-            docker buildx imagetools inspect ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG} \
-            --format '{{ json .Manifest}}' | \
-            jq -r .digest | cut -d ':' -f2)
-          sudo mkdir -p /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}
-          sudo mv image-builder-output /opt/bootc-os-disk-images/${IMAGE_DIGEST:0:12}/${DISK_FORMAT}
+          sudo mkdir -p /opt/bootc-os-disk-images/${{ github.run_number }}
+          sudo mv image-builder-output /opt/bootc-os-disk-images/${{ github.run_number }}
           sudo rm -rf ./image-builder-output
         env:
           OCI_REGISTRY: ${{ inputs.oci_registry }}
           OCI_IMAGE_REPO: ${{ inputs.oci_image_repo }}
           OCI_IMAGE_TAG: ${{ inputs.oci_image_tag }}
-          DISK_FORMAT: ${{ inputs.disk_format }}
+          TARGET_INTERFACE: ${{ inputs.target-interface }}
