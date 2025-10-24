@@ -4,13 +4,8 @@ run-name: "Build OCI container - ${{ github.actor }}"
 on:
   workflow_call:
     inputs:
-      runner-label:
-        description: 'Type label of runner'
-        required: true
-        default: 'bootc-builder'
-        type: string
       oci_registry:
-        description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
+        description: 'OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
         required: true
         default: 'quay.io'
         type: string
@@ -32,16 +27,15 @@ on:
   
   workflow_dispatch:
     inputs:
-      runner-label:
-        description: 'Type label of runner'
-        required: true
-        default: 'bootc-builder'
-        type: string
       oci_registry:
-        description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
+        description: 'Choose the OCI registry you want to use.'
         required: true
+        options:
+          - ghcr.io
+          - quay.io
+          - docker.io
         default: 'quay.io'
-        type: string
+        type: choice
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
@@ -62,7 +56,7 @@ jobs:
   build-bootc:
     runs-on:
       labels:
-        - ${{ inputs.runner-label }}
+        - bootc-builder
 
     steps:
       - name: Verify prerequisites

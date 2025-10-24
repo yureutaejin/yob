@@ -55,7 +55,6 @@ jobs:
     uses: ./.github/workflows/_build-bootc.yaml
     secrets: inherit
     with:
-      runner-label: 'bootc-builder'
       oci_registry: 'quay.io'
       oci_image_repo: 'yuntae/yob'
       oci_image_tag: 'merge-queue-${{ github.event_name }}'

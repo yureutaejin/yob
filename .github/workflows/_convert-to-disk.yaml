@@ -4,16 +4,15 @@ run-name: "Convert OCI Container to Disk Image - ${{ github.actor }}"
 on:
   workflow_dispatch:
     inputs:
-      runner-label:
-        description: 'Type label of runner'
-        required: true
-        default: 'bootc-builder'
-        type: string
       oci_registry:
-        description: 'Type the OCI registry you want to use. e.g. `ghcr.io`, `quay.io`,`docker.io`'
+        description: 'Choose the OCI registry you want to use.'
         required: true
+        options:
+          - ghcr.io
+          - quay.io
+          - docker.io
         default: 'quay.io'
-        type: string
+        type: choice
       oci_image_repo:
         description: 'Type the image repository path in OCI registry you want to push (`{tenancy-namespace}/{repo-name}`)'
         required: true
@@ -35,15 +34,22 @@ on:
         default: 'sda'
         type: string
       disk_format:
-        description: 'Type the disk format you want to convert the OCI image into (e.g. `qcow2`, `iso`, `raw`, `ami`)'
+        description: 'Choose disk format you want to convert the OCI image into'
         required: true
+        options:
+          - iso
+          - ami
         default: 'iso'
-        type: string
+        type: choice
       rootfs:
-        description: 'Type the root filesystem you want to use (e.g. `ext4`, `xfs`, `btrfs`)'
+        description: 'Choose root filesystem you want to use'
         required: true
+        options:
+          - btrfs
+          - ext4
+          - xfs
         default: 'btrfs'
-        type: string
+        type: choice
       aws_s3_bucket:
         description: '(Only for `ami` disk format) Type the AWS S3 bucket name you want to use'
         required: false
@@ -54,7 +60,7 @@ jobs:
   convert-to-disk-image:
     runs-on:
       labels:
-        - ${{ inputs.runner-label }}
+        - bootc-builder
 
     steps:
       - name: Verify prerequisites

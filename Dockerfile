@@ -1,6 +1,6 @@
-ARG DEFAULT_BASE="quay.io/fedora/fedora-bootc:42"
+ARG BASE_CONTAINER
 
-FROM ${DEFAULT_BASE} AS downloader
+FROM ${BASE_CONTAINER} AS downloader
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -27,7 +27,7 @@ RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/
 
 COPY ./filesystem /tmp/filesystem
 
-FROM ${DEFAULT_BASE} AS base
+FROM ${BASE_CONTAINER} AS base
 
 # See https://docs.fedoraproject.org/en-US/bootc/home-directories
 RUN mkdir -p /var/roothome
