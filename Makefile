@@ -35,15 +35,15 @@ build-bootc:
 	GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 	docker buildx bake ${TARGET_INTERFACE}
 
-.PHONY: login-public-oci-registry push-bootc
-push-bootc:
+.PHONY: push-bootc
+push-bootc: login-public-oci-registry
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
 		docker push ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}; \
 	done
 
-.PHONY: login-public-oci-registry pull-bootc
-pull-bootc:
+.PHONY: pull-bootc
+pull-bootc: login-public-oci-registry
 	[[ "${TARGET_INTERFACE}" == "all" ]] && TARGETS="core desktop" || TARGETS="${TARGET_INTERFACE}"; \
 	for target in $${TARGETS}; do \
 		docker pull ${OCI_REGISTRY}/${OCI_IMAGE_REPO}:${OCI_IMAGE_TAG}-$${target}; \
