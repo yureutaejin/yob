@@ -1,3 +1,5 @@
+
+
 # YOB : Your own OS using bootc
 
 ## Index
@@ -72,7 +74,7 @@ It will build OCI container based on bootc project and push it to your OCI Regis
 
 ### 2. (Just for first boot) Convert bootc to disk format
 
-- `make pull-bootc-image`
+- `make pull-bootc`
   - Pull bootc image from OCI Registry (if you haven't yet)
 - `make save-image-as-tgz`
 - `make convert-to-{iso,ami,qcow2}`
